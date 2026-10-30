@@ -6,9 +6,8 @@
  * overwrite scenes, so open public sign-up would hand that to anyone who
  * found the page. The code keeps the security boundary where it was.
  *
- * `POST /login` with only `{ password }` is the old shared-password sign-in,
- * still used by the uploader's inline sign-in. It stays until every teammate
- * has an account.
+ * The old shared-password sign-in is development-only. Production requires
+ * a real account, and previously issued accountless cookies are rejected.
  */
 import { Router } from 'express';
 import { timingSafeEqual } from 'crypto';
@@ -72,6 +71,9 @@ authRouter.post('/login', async (req, res, next) => {
     const { email, password } = req.body || {};
 
     if (!email) {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(401).json({ error: 'Sign in with your email and account password.' });
+      }
       if (!process.env.EDITOR_PASSWORD) {
         return res.status(500).json({ error: 'EDITOR_PASSWORD is not set on the server.' });
       }
@@ -170,7 +172,8 @@ authRouter.post('/forgot', async (req, res, next) => {
 });
 
 // Who is signed in, with their current role (read from the account, not the cookie).
-authRouter.get('/session', async (req, res) => {
+authRouter.get('/session', async (req, res, next) => {
+  try {
   let s = readSession(req);
   // removed, or signed in before a password reset: signed out
   if (s && (await staleReason(s))) { clearSession(res); s = null; }
@@ -181,4 +184,5 @@ authRouter.get('/session', async (req, res) => {
     authenticated: !!s,
     user: s?.sub ? { id: s.sub, name: s.name, email: s.email, role } : null
   });
+  } catch (err) { next(err); }
 });

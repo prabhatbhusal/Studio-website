@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { LoginScreen } from '../../features/marketing/components/LoginScreen';
+import { companyFont } from '../../features/marketing/companyFont';
 import '../../features/marketing/rcaas.out.css';
 import { NOINDEX } from '../../lib/shareMeta';
 import { withBase } from '../../lib/basePath';
@@ -14,5 +15,5 @@ export const metadata: Metadata = {
  *  the rcaas.tech look (LoginScreen). Static: AuthPanel reads ?mode=/?next=
  *  itself via useSearchParams() inside LoginScreen's Suspense. */
 export default function LoginPage() {
-  return <LoginScreen />;
+  return <div className={companyFont.variable}><LoginScreen /></div>;
 }

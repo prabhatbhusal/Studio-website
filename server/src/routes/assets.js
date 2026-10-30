@@ -26,6 +26,7 @@ import { recordAsset } from '../activity.js';
 import * as storage from '../storage.js';
 import { buildFloorPlan, renameRooms, saveMarks } from '../floorplan.js';
 import { DATA_DIR } from '../dataDir.js';
+import { createUpload, uploadGuard, uploadHandler, checkUploadBudget, forgetUpload, UPLOAD_MAX, UPLOAD_FILES_MAX } from '../uploadStore.js';
 
 export const assetsRouter = Router();
 
@@ -48,7 +49,7 @@ function newAssetId() {
 function safeRelPath(relPath) {
   if (typeof relPath !== 'string' || !relPath) return null;
   const normalized = relPath.replace(/\\/g, '/');
-  if (normalized.startsWith('/') || normalized.split('/').includes('..')) return null;
+  if (normalized.length > 1024 || normalized.split('/').length > 32 || normalized.startsWith('/') || normalized.includes(':') || normalized.includes('\0') || normalized.split('/').some((p) => !p || p === '..' || p === '.')) return null;
   return normalized;
 }
 
@@ -75,6 +76,7 @@ assetsRouter.post('/', requireEditorSession, async (req, res, next) => {
   try {
     if (await refuseStaff(req, res)) return;
     const assetId = newAssetId();
+    await createUpload(assetId, req.session);
     await fs.mkdir(path.join(STAGING_DIR, assetId), { recursive: true });
     res.json({ assetId });
   } catch (err) {
@@ -87,7 +89,7 @@ assetsRouter.post('/', requireEditorSession, async (req, res, next) => {
 /* -------------------------------------------------------------------- */
 
 // One file of an upload, at its path inside the asset (chunked and resumable).
-assetsRouter.post('/:assetId/files', requireEditorSession, async (req, res, next) => {
+assetsRouter.post('/:assetId/files', requireEditorSession, uploadGuard, async (req, res, next) => {
   try {
     const relPath = safeRelPath(req.body?.relPath);
     if (!relPath) return res.status(400).json({ error: 'relPath is required and must be a relative path.' });
@@ -105,9 +107,9 @@ assetsRouter.post('/:assetId/files', requireEditorSession, async (req, res, next
 assetsRouter.put(
   '/:assetId/files/chunk',
   requireEditorSession,
+  uploadGuard,
   express.raw({ type: () => true, limit: CHUNK_MAX }),
-  async (req, res, next) => {
-    try {
+  uploadHandler(async (req, res) => {
       const relPath = safeRelPath(req.query.relPath);
       const offset = Number(req.query.offset);
       if (!relPath) return res.status(400).json({ error: 'relPath is required and must be a relative path.' });
@@ -124,6 +126,15 @@ assetsRouter.put(
         return res.status(409).json({ error: 'Offset does not match bytes already staged.', bytesReceived: current });
       }
 
+      const files = await listStagedFiles(req.params.assetId);
+      if (!files.includes(relPath) && files.length >= UPLOAD_FILES_MAX) return res.status(413).json({ error: 'Too many upload files.' });
+      let total = req.body.length;
+      for (const file of files) total += await stagedBytes(req.params.assetId, file);
+      if (total > UPLOAD_MAX) return res.status(413).json({ error: 'This upload exceeds the configured size limit.' });
+      await checkUploadBudget(req.params.assetId, total);
+      const disk = await fs.statfs(STAGING_DIR);
+      if (disk.bavail * disk.bsize < req.body.length + 256 * 1024 ** 2) return res.status(507).json({ error: 'Upload storage is full. Contact the team.' });
+
       const dest = stagingFile(req.params.assetId, relPath);
       await fs.mkdir(path.dirname(dest), { recursive: true });
       await new Promise((resolve, reject) => {
@@ -137,10 +148,7 @@ assetsRouter.put(
       });
 
       res.json({ relPath, bytesReceived: offset + req.body.length });
-    } catch (err) {
-      next(err);
-    }
-  }
+  })
 );
 
 /* -------------------------------------------------------------------- */
@@ -159,20 +167,29 @@ function extractZipToStaging(assetId, zipRelPath) {
       if (err) return reject(err);
       zipfile.on('error', reject);
       zipfile.on('end', resolve);
+      let expanded = 0, files = 0;
       zipfile.on('entry', (entry) => {
         if (/\/$/.test(entry.fileName)) { zipfile.readEntry(); return; } // directory entry
         const relPath = safeRelPath(entry.fileName);
         if (!relPath) { zipfile.readEntry(); return; } // traversal attempt inside the zip — drop it
-        zipfile.openReadStream(entry, (err2, readStream) => {
-          if (err2) return reject(err2);
-          const dest = stagingFile(assetId, relPath);
-          mkdirSync(path.dirname(dest), { recursive: true });
-          const ws = createWriteStream(dest);
-          readStream.on('error', reject);
-          ws.on('error', reject);
-          ws.on('finish', () => zipfile.readEntry());
-          readStream.pipe(ws);
-        });
+        expanded += entry.uncompressedSize;
+        if (++files > UPLOAD_FILES_MAX || expanded > UPLOAD_MAX || relPath === zipRelPath) {
+          zipfile.close();
+          return reject(new Error('Archive exceeds the upload limits or replaces itself.'));
+        }
+        Promise.all([checkUploadBudget(assetId, expanded), fs.statfs(STAGING_DIR)]).then(([, disk]) => {
+          if (disk.bavail * disk.bsize < entry.uncompressedSize + 256 * 1024 ** 2) throw new Error('Not enough upload storage.');
+          zipfile.openReadStream(entry, (err2, readStream) => {
+            if (err2) { zipfile.close(); return reject(err2); }
+            const dest = stagingFile(assetId, relPath);
+            mkdirSync(path.dirname(dest), { recursive: true });
+            const ws = createWriteStream(dest);
+            pipeline(readStream, ws, (streamError) => {
+              if (streamError) { zipfile.close(); reject(streamError); }
+              else zipfile.readEntry();
+            });
+          });
+        }).catch((budgetError) => { zipfile.close(); reject(budgetError); });
       });
       zipfile.readEntry();
     });
@@ -359,9 +376,8 @@ async function finalizeGlb(assetId, relPath, res) {
 
 
 // Finish an upload: check every file arrived, then move it into storage (?kind= for audio and models).
-assetsRouter.post('/:assetId/finalize', requireEditorSession, assetGuard, async (req, res, next) => {
+assetsRouter.post('/:assetId/finalize', requireEditorSession, uploadGuard, assetGuard, uploadHandler(async (req, res) => {
   const { assetId } = req.params;
-  try {
     if (req.query.kind === 'audio') return await finalizeAudio(assetId, res);
     if (req.query.kind === 'video360') return await finalizeVideo360(assetId, res);
     let relPaths = await listStagedFiles(assetId);
@@ -469,10 +485,7 @@ assetsRouter.post('/:assetId/finalize', requireEditorSession, assetGuard, async 
       splatCount: typeof meta.totalSplats === 'number' ? meta.totalSplats : null,
       bbox: meta.root?.boundingBox ?? null
     });
-  } catch (err) {
-    next(err);
-  }
-});
+}));
 
 /* -------------------------------------------------------------------- */
 /* Read — public, range-capable (the SDK streams tiles with 206s)        */
@@ -515,9 +528,10 @@ assetsRouter.get('/:assetId/*', async (req, res, next) => {
 
     if (range) {
       const match = /^bytes=(\d*)-(\d*)$/.exec(range);
-      const start = match?.[1] ? Number(match[1]) : 0;
-      const end = match?.[2] ? Number(match[2]) : bytes - 1;
-      if (!match || start > end || end >= bytes) {
+      const suffix = match && !match[1] && match[2] ? Number(match[2]) : null;
+      const start = suffix !== null ? Math.max(0, bytes - suffix) : match?.[1] ? Number(match[1]) : 0;
+      const end = suffix !== null ? bytes - 1 : Math.min(match?.[2] ? Number(match[2]) : bytes - 1, bytes - 1);
+      if (!match || (!match[1] && !match[2]) || suffix === 0 || !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= bytes) {
         res.setHeader('Content-Range', `bytes */${bytes}`);
         return res.status(416).end();
       }
@@ -685,6 +699,7 @@ assetsRouter.delete('/:assetId', requireEditorSession, assetGuard, async (req, r
   try {
     await recordAsset(req, req.params.assetId, 'deleted a model', req.params.assetId);
     await storage.remove(req.params.assetId);
+    await forgetUpload(req.params.assetId);
     res.status(204).end();
   } catch (err) {
     next(err);

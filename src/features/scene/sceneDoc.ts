@@ -9,7 +9,7 @@
  * splat variants, transform, status…) survive a save untouched.
  */
 import * as THREE from 'three';
-import { spawnFor, SCENE_BY_ID } from './scenes';
+import { spawnFor, SCENE_BY_ID, renameScene, setNight, setPlace, setSessionSpawn } from './scenes';
 import { getScene, getPublishedScene } from '../../lib/api';
 import { liveViewpoints, loadTracks } from './viewpoints';
 import { transformFor, loadTransform } from './transform';
@@ -312,6 +312,26 @@ export function markSaved(sceneId: string, sent: SceneDoc) {
 
 /** Has the space's saved draft been read yet? Undo starts from it (history.ts). */
 export const docLoaded = (sceneId: string) => !!serverDocs[sceneId];
+
+/** Recover editable fields only; server-owned assets, ownership and revision stay intact. */
+export function recoverSceneEdits(sceneId: string, recovered: SceneDoc) {
+  const base = serverDocs[sceneId];
+  if (!base || recovered.id !== sceneId || recovered.propertyId !== base.propertyId ||
+    (recovered.revision ?? 0) !== (base.revision ?? 0)) throw new Error('The server draft has changed. Download the recovery copy to review it.');
+  const copy = structuredClone(recovered);
+  doc[sceneId] = { hotspots: copy.hotspots };
+  booking[sceneId] = copy.booking ?? null;
+  colliders[sceneId] = (copy.colliders ?? []).map(cleanCollider);
+  looks[sceneId] = cleanLook(copy.look);
+  loadTracks(sceneId, copy.tracks, { replace: true });
+  loadTransform(sceneId, copy.transform);
+  renameScene(sceneId, copy.title);
+  setNight(sceneId, copy.night ?? null);
+  setPlace(sceneId, { building: copy.building ?? '', floor: copy.floor ?? '' });
+  setSessionSpawn(sceneId, copy.spawn.position, copy.spawn.yaw);
+  setUnitScale(sceneId, copy.unitScale);
+  emit();
+}
 
 /** True when the studio holds edits the server doesn't have yet. A scene
  *  that was never loaded counts as unsaved. */

@@ -6,6 +6,9 @@ import {
   type BookableHotspot, type EventSession, type Reservation, type ReservationStatus, type SiteBooking, type SiteEvents, type SiteStays
 } from '../../../../lib/api';
 import { useStudioSession } from '../../../../features/auth/useStudioSession';
+import { matchesReservation, overlapsDates } from '../../../../features/booking/reservationFilters';
+import ReservationCalendar from '../../../../features/booking/ReservationCalendar';
+import ReservationReviewPanel, { GuestNotification } from '../../../../features/booking/ReservationReviewPanel';
 import '../../../../features/studio/editor.css';
 import '../site/site-editor.css';
 
@@ -90,8 +93,8 @@ function MarkBooked({ id, hotspots, stays, events, today, onMarked }: {
   };
   return (
     <section className="se-card">
-      <h2>Mark as booked</h2>
-      <p className="se-hint">Booked by phone, at the desk or in your own engine? Mark it here, and visitors see it taken in the tour and on the website.</p>
+      <h2>Block availability</h2>
+      <p className="se-hint">Use this for a phone booking, walk-in or commitment recorded elsewhere. This creates an availability block without guest details or a notification. For an incoming request, use Review reservation and confirm it there.</p>
       <label className="se-field"><span>Room, hall or table</span>
         <select value={pick.key} onChange={(e) => setKey(e.target.value)}>{options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}</select>
       </label>
@@ -115,7 +118,7 @@ function MarkBooked({ id, hotspots, stays, events, today, onMarked }: {
         )}
       </div>
       <label className="se-field"><span>Note <em>only you see it</em></span><input value={note} maxLength={120} placeholder="e.g. Sharma wedding, booked by phone" onChange={(e) => setNote(e.target.value)} /></label>
-      <button className="se-main" disabled={busy || !from || (pick.of === 'room' && !(to > from)) || (pick.of === 'table' && !time)} onClick={send}>Mark booked</button>
+      <button className="se-main" disabled={busy || !from || (pick.of === 'room' && !(to > from)) || (pick.of === 'table' && !time)} onClick={send}>Block availability</button>
       {msg && <p className="se-hint" role="status">{msg}</p>}
     </section>
   );
@@ -140,10 +143,17 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
   const [today, setToday] = useState('');
   const [tab, setTab] = useState<Tab>('reply');
   const [kind, setKind] = useState<'all' | Kind>('all');
+  const [query, setQuery] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [month, setMonth] = useState('');
+  const [selectedDay, setSelectedDay] = useState('');
   const [staff, setStaff] = useState(false); // the client's staff: no setup to go to
   const [booksOff, setBooksOff] = useState(false); // the project switched bookings off (its home)
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [reviewId, setReviewId] = useState<string | null>(null);
 
   const load = useCallback(() => getReservations(id).then((r) => {
     if (!r) return;
@@ -176,22 +186,24 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
   const ofKind = bookings.filter((r) => kind === 'all' || kindOf(r) === kind);
   const waiting = ofKind.filter((r) => r.status === 'requested' && upcoming(r));
   const stillWaiting = waitlist.filter((r) => r.status === 'waiting').length;
-  const shown = (tab === 'waitlist' ? waitlist.filter((r) => r.status !== 'removed')
+  const tabRecords = (tab === 'waitlist' ? waitlist.filter((r) => r.status !== 'removed')
     : tab === 'reply' ? waiting
     : tab === 'upcoming' ? ofKind.filter((r) => upcoming(r) && ['requested', 'confirmed'].includes(r.status))
       : tab === 'past' ? ofKind.filter((r) => !upcoming(r)).reverse()
         : ofKind);
-  const days = [...new Set(shown.map((r) => r.date))];
 
   const set = async (r: Reservation, status: ReservationStatus) => {
     setBusy(r.id);
     setError('');
     try {
-      const next = await setReservationStatus(id, r.id, status);
+      const next = await setReservationStatus(id, r.id, status, r.status);
+      if (!next) throw new Error('The reservation update was not returned. Refresh before trying again.');
       if (next) setList((l) => l && l.map((x) => (x.id === r.id ? next : x)));
       if (next?.waitlistTold) { setError(''); load(); window.alert(`${next.waitlistTold} ${next.waitlistTold === 1 ? 'guest' : 'guests'} on the waitlist can now book, and ${next.waitlistTold === 1 ? 'has' : 'have'} been told.`); }
+      return true;
     } catch (e) {
       setError((e as Error).message);
+      return false;
     } finally {
       setBusy('');
     }
@@ -206,6 +218,15 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
     return (r.rooms ?? 1) > 1 ? `${r.rooms} × ${name}` : name;
   };
   const hallName = (r: Reservation) => r.hallLabel || events?.halls.find((h) => h.id === r.hall)?.label || r.hall || 'Hall';
+  const matching = tabRecords.filter((r) => matchesReservation(r, query,
+    nightly(r) || (r.kind === 'wait' && r.of === 'room') ? roomName(r) : eventish(r) ? hallName(r) : tableName(r)));
+  const invalidDates = Boolean(fromDate && toDate && fromDate > toDate);
+  const visibleMonth = month || today.slice(0, 7);
+  const shown = matching.filter((r) => view === 'calendar'
+    ? selectedDay ? overlapsDates(r, selectedDay, selectedDay) : (r.date.slice(0, 7) === visibleMonth || overlapsDates(r, `${visibleMonth}-01`, `${visibleMonth}-31`))
+    : overlapsDates(r, fromDate, toDate));
+  const days = [...new Set(shown.map((r) => r.date))].sort((a, b) => tab === 'past' ? b.localeCompare(a) : a.localeCompare(b));
+  const filtered = Boolean(query.trim() || (view === 'list' && (fromDate || toDate)) || view === 'calendar');
   // What a day adds up to: guests at tables, rooms for guests arriving, and events.
   const dayTotal = (d: string) => {
     const live = shown.filter((r) => r.date === d && r.status !== 'declined' && r.status !== 'cancelled');
@@ -250,7 +271,9 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
             )}
           </div>
         )}
-        {!booksOff && <MarkBooked id={id} hotspots={hotspots} stays={stays} events={events} today={today} onMarked={load} />}
+        {!booksOff && <details className="rs-manual-block"><summary>Block availability for an external booking</summary>
+          <MarkBooked id={id} hotspots={hotspots} stays={stays} events={events} today={today} onMarked={load} />
+        </details>}
         <div className="rs-tabs" role="tablist">
           {([['reply', `Needs a reply${waiting.length ? ` (${waiting.length})` : ''}`], ['upcoming', 'Upcoming'], ['past', 'Past'], ['all', 'All'], ['waitlist', `Waitlist${stillWaiting ? ` (${stillWaiting})` : ''}`]] as [Tab, string][]).map(([k, label]) => (
             <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'is-on' : ''} onClick={() => setTab(k)}>{label}</button>
@@ -264,8 +287,33 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
           )}
         </div>
 
+        <section className="se-card" aria-label="Find reservations">
+          <label className="se-field"><span>Search reservations</span>
+            <input type="search" value={query} placeholder="Guest, phone, email, reference or room" onChange={(e) => setQuery(e.target.value)} />
+          </label>
+          <div className="rs-filter-bar">
+            <div className="rs-tabs" role="group" aria-label="Reservation view">
+              <button aria-pressed={view === 'list'} className={view === 'list' ? 'is-on' : ''} onClick={() => setView('list')}>List</button>
+              <button aria-pressed={view === 'calendar'} className={view === 'calendar' ? 'is-on' : ''} onClick={() => setView('calendar')}>Calendar</button>
+            </div>
+            <button onClick={() => { setQuery(''); setFromDate(''); setToDate(''); setSelectedDay(''); }}>Clear filters</button>
+          </div>
+          {view === 'list' && <>
+            <div className="rs-date-filters">
+              <label className="se-field"><span>From date</span><input type="date" value={fromDate} aria-invalid={invalidDates} aria-describedby="rs-date-help" onChange={(e) => setFromDate(e.target.value)} /></label>
+              <label className="se-field"><span>Through date</span><input type="date" value={toDate} min={fromDate || undefined} aria-invalid={invalidDates} aria-describedby="rs-date-help" onChange={(e) => setToDate(e.target.value)} /></label>
+            </div>
+            <p id="rs-date-help" className="se-hint">{invalidDates ? 'Choose an end date on or after the start date.' : 'Includes room stays occupying any night in this range; checkout day is excluded.'}</p>
+          </>}
+        </section>
+        {view === 'calendar' && visibleMonth && <ReservationCalendar month={visibleMonth} today={today} reservations={matching}
+          selected={selectedDay} onMonth={(value) => { setMonth(value); setSelectedDay(''); }} onSelect={setSelectedDay} />}
+        <p className="se-hint" role="status">{shown.length} {shown.length === 1 ? 'record' : 'records'} shown{view === 'calendar' && selectedDay ? ` for ${shortDay(selectedDay)}` : ''} in this tab.
+          {view === 'calendar' && selectedDay && <> <button onClick={() => setSelectedDay('')}>Show whole month</button></>}
+        </p>
+
         {!shown.length && (
-          <p className="se-hint">{tab === 'reply' ? 'Nothing waiting. New requests from the website and the 3D tour appear here.'
+          <p className="se-hint">{filtered ? 'No reservations match these filters in this tab. Try another date, search or tab.' : tab === 'reply' ? 'Nothing waiting. New requests from the website and the 3D tour appear here.'
             : tab === 'waitlist' ? 'No one is waiting. When a day or dates are full, guests can join the waitlist; if you decline or cancel a booking, the ones who now fit are told by text and email.'
               : 'No bookings here.'}</p>
         )}
@@ -282,6 +330,7 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
                 </div>
                 <div className="rs-who">
                   <b>{r.name}</b> <span className="rs-table">{r.of === 'room' ? r.roomLabel || 'Any room' : 'A table'}</span>
+                  <p className="se-hint">Reference: {r.id}</p>
                   {r.of === 'room' && <p className="rs-stay">{shortDay(r.date)} → {shortDay(r.checkout ?? r.date)}</p>}
                   <div className="rs-contact">
                     <a href={`tel:${r.phone}`}>{r.phone}</a>
@@ -318,21 +367,23 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
                     </div>
                   )}
                   {r.notes && <p className="rs-notes">“{r.notes}”</p>}
+                  <p className="se-hint">Reference: {r.id}</p>
                   {r.attachment && (
                     <p className="se-hint">
                       Event plan: <a href={bookingPlanUrl(id, r.id)}>{r.attachment.name}</a> ({Math.max(1, Math.round(r.attachment.bytes / 1024))} KB)
                     </p>
                   )}
                   {r.delivery && !r.delivery.sent && <p className="se-hint">Not emailed to you: {r.delivery.reason}</p>}
+                  <GuestNotification reservation={r} />
                 </div>
                 <div className="rs-act">
                   <span className={`rs-status is-${r.status}`}>{LABEL[r.status]}</span>
                   {r.status === 'requested' && (
                     <>
-                      <button className="se-main" disabled={busy === r.id} onClick={() => set(r, 'confirmed')}>Confirm</button>
-                      <button disabled={busy === r.id} onClick={() => set(r, 'declined')}>Decline</button>
+                      <button className="se-main" disabled={!!busy} onClick={() => setReviewId(r.id)}>Review reservation</button>
                     </>
                   )}
+                  {r.status !== 'requested' && !r.blocked && <button disabled={!!busy} onClick={() => setReviewId(r.id)}>View reservation &amp; plan</button>}
                   {r.status === 'confirmed' && <button disabled={busy === r.id} onClick={() => set(r, 'cancelled')}>{r.blocked ? 'Remove the mark' : 'Cancel'}</button>}
                   {(r.status === 'declined' || r.status === 'cancelled') && upcoming(r) && (
                     <button disabled={busy === r.id} onClick={() => set(r, 'requested')}>Reopen</button>
@@ -343,6 +394,8 @@ export default function ReservationsPage({ params }: { params: Promise<{ propert
           </section>
         ))}
       </main>
+      {reviewId && list.find((r) => r.id === reviewId) && <ReservationReviewPanel key={reviewId} project={id}
+        reservation={list.find((r) => r.id === reviewId)!} busy={!!busy} onClose={() => setReviewId(null)} onDecision={set} onRefresh={load} />}
     </div>
   );
 }

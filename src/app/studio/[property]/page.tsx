@@ -48,7 +48,7 @@ const inWords = (list: string[]) => (list.length < 2 ? list.join('') : `${list.s
 const minutes = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 /** A booking request still to answer: asked, and not yet past (a stay until its guests leave). */
 const needsReply = (r: Reservation, today: string) =>
-  r.kind !== 'wait' && r.status === 'requested' && (r.checkout ?? r.date) >= today;
+  r.kind !== 'wait' && r.status === 'requested' && (r.checkout ? r.checkout > today : r.date >= today);
 
 /**
  * A project's home (/studio/<project>): its spaces with their state and what

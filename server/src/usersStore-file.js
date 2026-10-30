@@ -1,3 +1,4 @@
+import { serialMutation } from './serial.js';
 /**
  * Studio accounts. One JSON file per user under data/users/, named by a hash
  * of the lowercased email — so an email never becomes a path, and lookup is
@@ -8,33 +9,15 @@
  */
 import { promises as fs } from 'fs';
 import path from 'path';
-import { randomUUID, randomBytes, scrypt, timingSafeEqual, createHash } from 'crypto';
-import { promisify } from 'util';
+import { randomUUID, randomBytes, createHash } from 'crypto';
+import { normEmail, hashPassword, passwordMatches, publicUser, sha, RESET_TTL } from './accountCredentials.js';
+export { normEmail, hashPassword, passwordMatches, publicUser, sha, RESET_TTL } from './accountCredentials.js';
 import { DATA_DIR, writeFileWhole } from './dataDir.js';
+import { readRecord } from './records.js';
 
-const scryptAsync = promisify(scrypt);
 const USERS_DIR = path.join(DATA_DIR, 'users');
-const KEY_LEN = 64;
-
-export const normEmail = (email) => String(email ?? '').trim().toLowerCase();
 const fileFor = (email) =>
   path.join(USERS_DIR, `${createHash('sha256').update(normEmail(email)).digest('hex')}.json`);
-
-export async function hashPassword(password) {
-  const salt = randomBytes(16);
-  const key = await scryptAsync(password, salt, KEY_LEN);
-  return `${salt.toString('hex')}:${key.toString('hex')}`;
-}
-
-export async function passwordMatches(password, stored) {
-  const [saltHex, keyHex] = String(stored).split(':');
-  if (!saltHex || !keyHex) return false;
-  const expected = Buffer.from(keyHex, 'hex');
-  const actual = await scryptAsync(password, Buffer.from(saltHex, 'hex'), expected.length);
-  return timingSafeEqual(actual, expected);
-}
-
-export const publicUser = ({ id, name, email, role }) => ({ id, name, email, role: role ?? 'editor' });
 
 async function readUser(email) {
   try {
@@ -55,9 +38,7 @@ async function readAllUsers() {
     if (err.code === 'ENOENT') return [];
     throw err;
   }
-  return Promise.all(
-    files.filter((f) => f.endsWith('.json')).map(async (f) => JSON.parse(await fs.readFile(path.join(USERS_DIR, f), 'utf8')))
-  );
+  return (await Promise.all(files.filter((f) => f.endsWith('.json')).map((f) => readRecord(path.join(USERS_DIR, f))))).filter(Boolean);
 }
 
 /** Every account, for the admin-only team list. Newest first. */
@@ -82,7 +63,8 @@ export async function getUserByEmail(email) {
 
 /** Promote or demote an account. Refuses to leave the team with zero admins
  *  — the one guard rail against locking everyone out. */
-export async function setUserRole(id, role) {
+export const setUserRole = serialMutation(setUserRoleImpl);
+async function setUserRoleImpl(id, role) {
   if (role !== 'admin' && role !== 'editor') throw new Error('role must be "admin" or "editor"');
   const all = await readAllUsers();
   const record = all.find((u) => u.id === id);
@@ -101,9 +83,10 @@ export async function setUserRole(id, role) {
  *  The first account ever created becomes admin (there is no admin yet to
  *  invite anyone); every account after that starts as an editor and an
  *  admin promotes them from the team list. */
-export async function createUser({ name, email, password, role }) {
+export const createUser = serialMutation(createUserImpl);
+async function createUserImpl({ name, email, password, role }) {
   await fs.mkdir(USERS_DIR, { recursive: true });
-  const isFirstAccount = (await readAllUsers()).length === 0;
+  const isFirstAccount = !(await fs.readdir(USERS_DIR)).some((f) => f.endsWith('.json'));
   const record = {
     id: randomUUID(),
     name: String(name).trim(),
@@ -128,7 +111,7 @@ export async function createUser({ name, email, password, role }) {
 /* hash is stored; it lasts a day and works once.                       */
 /* ------------------------------------------------------------------ */
 
-export const RESET_TTL = 24 * 60 * 60 * 1000;
+
 
 /**
  * A client's staff account (2026-09-28), made by a project owner's invite:
@@ -136,13 +119,14 @@ export const RESET_TTL = 24 * 60 * 60 * 1000;
  * link to set theirs. Staff never sign up with the team's code. Returns the
  * account and its link, or null if the email already has an account.
  */
-export async function createStaffAccount({ name, email }) {
+export const createStaffAccount = serialMutation(createStaffAccountImpl);
+async function createStaffAccountImpl({ name, email }) {
   const user = await createUser({ name, email, password: randomBytes(32).toString('base64url'), role: 'staff' });
   if (!user) return null;
   const link = await createResetToken(user.id);
   return { user, token: link.token, expires: link.expires };
 }
-export const sha = (s) => createHash('sha256').update(String(s)).digest('hex');
+
 
 /** When the password last changed: sessions issued before it are void. */
 export async function passwordChangedAt(id) {
@@ -150,7 +134,8 @@ export async function passwordChangedAt(id) {
   return u ? u.passwordChangedAt ?? null : undefined; // undefined: no such account
 }
 
-export async function createResetToken(id) {
+export const createResetToken = serialMutation(createResetTokenImpl);
+async function createResetTokenImpl(id) {
   const all = await readAllUsers();
   const record = all.find((u) => u.id === id);
   if (!record) return null;
@@ -161,7 +146,8 @@ export async function createResetToken(id) {
 }
 
 /** Sets the new password if the token is live; null otherwise. */
-export async function resetPassword(token, password) {
+export const resetPassword = serialMutation(resetPasswordImpl);
+async function resetPasswordImpl(token, password) {
   const hash = sha(token);
   const record = (await readAllUsers()).find((u) => u.reset && u.reset.hash === hash);
   if (!record || record.reset.expires < Date.now()) return null;
@@ -174,7 +160,8 @@ export async function resetPassword(token, password) {
 
 /** A signed-in person's own new password (the route checks the old one).
  *  Voids older sessions and any reset link still waiting. */
-export async function setPassword(id, password) {
+export const setPassword = serialMutation(setPasswordImpl);
+async function setPasswordImpl(id, password) {
   const record = (await readAllUsers()).find((u) => u.id === id);
   if (!record) return null;
   record.passwordHash = await hashPassword(password);
@@ -185,7 +172,8 @@ export async function setPassword(id, password) {
 }
 
 /** Refuses to remove the last admin. */
-export async function deleteUser(id) {
+export const deleteUser = serialMutation(deleteUserImpl);
+async function deleteUserImpl(id) {
   const all = await readAllUsers();
   const record = all.find((u) => u.id === id);
   if (!record) return null;

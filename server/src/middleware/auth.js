@@ -23,6 +23,7 @@ function secret() {
  *  `requireAdmin` below, so a promotion or demotion takes effect at once
  *  instead of waiting out the session's 12h. */
 export function issueSession(res, user = null) {
+  if (!user && process.env.NODE_ENV === 'production') throw new Error('An account is required in production.');
   // iatMs: when, to the millisecond — a password reset voids sessions issued before it
   const claims = user ? { role: user.role, sub: user.id, name: user.name, email: user.email, iatMs: Date.now() } : { role: 'admin' };
   const token = jwt.sign(claims, secret(), { expiresIn: SESSION_TTL });
@@ -42,7 +43,8 @@ export function readSession(req) {
   const token = req.cookies?.[SESSION_COOKIE];
   if (!token) return null;
   try {
-    return jwt.verify(token, secret());
+    const session = jwt.verify(token, secret());
+    return process.env.NODE_ENV === 'production' && !session.sub ? null : session;
   } catch {
     return null;
   }
@@ -75,6 +77,7 @@ export function requireEditorSession(req, res, next) {
  *  in role never waits out an old cookie. The legacy passwordless session
  *  (no `sub`) has always had full access and stays admin. */
 export async function requireAdmin(req, res, next) {
+  try {
   const session = readSession(req);
   if (!session) return res.status(401).json({ error: 'Sign in to the editor first.' });
   const why = await staleReason(session);
@@ -86,4 +89,5 @@ export async function requireAdmin(req, res, next) {
   }
   req.session = session;
   next();
+  } catch (err) { next(err); }
 }

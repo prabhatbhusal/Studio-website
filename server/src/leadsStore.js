@@ -8,6 +8,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { DATA_DIR, writeFileWhole } from './dataDir.js';
+import { readRecord } from './records.js';
 
 const LEADS_DIR = path.join(DATA_DIR, 'leads');
 
@@ -55,7 +56,7 @@ export async function listLeads() {
   const leads = await Promise.all(
     files
       .filter((f) => f.endsWith('.json'))
-      .map(async (f) => JSON.parse(await fs.readFile(path.join(LEADS_DIR, f), 'utf8')))
+      .map((f) => readRecord(path.join(LEADS_DIR, f)))
   );
-  return leads.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return leads.filter(Boolean).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }

@@ -10,13 +10,11 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @source "./**/*.{ts,tsx}";
 
-/* Fonts are served by next/font (the (site) layout sets --font-comfortaa on
-   .rcaas; the root layout sets --font-ui, JetBrains Mono): inline, so they
-   resolve on the element rather than on :root. */
+/* Company layouts provide Inter as --font-ui; client-facing routes keep their own typography. */
 @theme inline {
-  --font-sans: var(--font-comfortaa), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-comfortaa), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: var(--font-ui), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-sans: var(--font-ui), Arial, sans-serif;
+  --font-display: var(--font-ui), Arial, sans-serif;
+  --font-mono: var(--font-ui), Arial, sans-serif;
 }
 
 @theme {
@@ -38,9 +36,9 @@
 
 @layer base {
   .rcaas {
-    --font-sans: var(--font-comfortaa), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-display: var(--font-comfortaa), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-mono: var(--font-ui), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-sans: var(--font-ui), Arial, sans-serif;
+    --font-display: var(--font-ui), Arial, sans-serif;
+    --font-mono: var(--font-ui), Arial, sans-serif;
 
     /* High-contrast Loro Labs-inspired clean white foundation */
     --bg-light: #FFFFFF;
@@ -452,7 +450,7 @@ html:has(.rcaas) {
 .rcaas .snav-drop-at { display: inline-flex; align-items: center; }
 .rcaas .snav-link {
   position: relative; isolation: isolate; padding: 9px 12px; border-radius: 999px; white-space: nowrap;
-  font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: #71717a; transition: color 0.2s;
+  font: 600 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: #71717a; transition: color 0.2s;
 }
 /* hover: a faint pill grows in from the middle */
 .rcaas .snav-link::before {
@@ -494,7 +492,7 @@ html:has(.rcaas) {
 .rcaas .snav[data-collapsed] .snav-actions { max-width: 0; opacity: 0; overflow: hidden; pointer-events: none; transition: max-width 0.55s var(--ease), opacity 0.2s; }
 .rcaas .snav-quiet, .rcaas .snav-primary {
   display: inline-flex; align-items: center; min-height: 38px; padding: 0 16px; border-radius: 999px; white-space: nowrap;
-  font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  font: 600 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;
 }
 .rcaas .snav-quiet { color: #52525b; }
 .rcaas .snav-quiet:hover { color: var(--color-ink); background: rgba(9, 9, 11, 0.05); }
@@ -530,7 +528,7 @@ html:has(.rcaas) {
 @keyframes snav-drop-scan { from { top: 0; opacity: 1; } to { top: 100%; opacity: 0; } }
 .rcaas .snav-all {
   display: inline-flex; align-items: center; gap: 8px; width: fit-content; padding: 6px 0;
-  font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-ink);
+  font: 600 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-ink);
   background: linear-gradient(var(--color-accent), var(--color-accent)) left bottom / 0 1px no-repeat;
   transition: background-size 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s;
 }
@@ -547,7 +545,7 @@ html:has(.rcaas) {
 .rcaas .snav-menu-btn {
   display: none; align-items: center; gap: 10px; height: 40px; margin-left: auto; padding: 0 14px 0 16px;
   border: 1px solid var(--color-line); border-radius: 14px; background: #fff; color: var(--color-ink);
-  font: 500 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  font: 600 11px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
 }
 .rcaas .snav-menu-word { min-width: 5ch; text-align: left; }
 .rcaas .snav-menu-ic { position: relative; width: 16px; height: 10px; }
@@ -597,7 +595,7 @@ html:has(.rcaas) {
   background-image: radial-gradient(rgba(9, 9, 11, 0.07) 1px, transparent 1.3px); background-size: 22px 22px;
 }
 .rcaas .mnav-t {
-  font: 700 clamp(26px, 7.4vw, 40px)/1.05 var(--font-display); letter-spacing: -0.04em;
+  font: 600 clamp(26px, 7.4vw, 40px)/1.05 var(--font-display); letter-spacing: -0.04em;
   transition: letter-spacing 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .rcaas .mnav-body a:active .mnav-t { letter-spacing: -0.02em; }

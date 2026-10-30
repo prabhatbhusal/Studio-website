@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
@@ -165,18 +165,20 @@ export function SiteEnquire({ project, name, preview = false, whatsapp, enquirie
  * With reduced motion nothing moves: everything is simply there.
  * Styles: website.css .wsm-.
  */
-export function SiteReveal() {
+export function SiteReveal({ motionMode = 'calm' }: { motionMode?: 'calm' | 'expressive' | 'none' }) {
   const [curtain, setCurtain] = useState<string | null>(null);
-  useGSAP(() => {
+  useGSAP((context) => {
     const ws = document.querySelector<HTMLElement>('.ws');
-    if (!ws || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!ws || ws.dataset.motion === 'none' || matchMedia('(prefers-reduced-motion: reduce)').matches) { setCurtain(null); return; }
+    let disposed = false;
+    const expressive = ws.dataset.motion === 'expressive' && matchMedia('(min-width: 901px)').matches;
     gsap.registerPlugin(ScrollTrigger, SplitText);
     ScrollTrigger.defaults({ scroller: ws });
     ws.classList.add('wsm-on');
 
     // the opening plays once per visit (this tab), on the hub only
     let first = false;
-    try { first = !!ws.querySelector('.ws-hero') && !sessionStorage.getItem('ws-intro'); sessionStorage.setItem('ws-intro', '1'); } catch { /* storage off: no curtain */ }
+    try { first = expressive && !!ws.querySelector('.ws-hero') && !sessionStorage.getItem('ws-intro'); if (first) sessionStorage.setItem('ws-intro', '1'); } catch { /* storage off: no curtain */ }
     const name = ws.querySelector('.wsn-word')?.textContent ?? '';
     if (first && name) setCurtain(name);
     else delete document.documentElement.dataset.wsIntro;
@@ -187,6 +189,18 @@ export function SiteReveal() {
         delay: el.closest('.ws-hero') ? (first ? 1.35 : 0.15) : 0 }) });
 
     document.fonts.ready.then(() => {
+      if (disposed) return;
+      context.add(() => {
+      if (!expressive) {
+        // Calm pages retain normal document flow and fully readable story text.
+        const hero = ws.querySelector('.ws-hero-in');
+        if (hero) gsap.from(hero, { opacity: 0, y: 12, duration: 0.45, clearProps: 'opacity,transform' });
+        ws.querySelectorAll('.ws-head, .ws-room, .ws-offer, .ws-gallery button').forEach(el => {
+          gsap.from(el, { opacity: 0, y: 12, duration: 0.45,
+            clearProps: 'opacity,transform', scrollTrigger: { trigger: el, start: 'top 95%', once: true } });
+        });
+        return;
+      }
       const wide = matchMedia('(min-width: 901px)').matches;
       const hero = ws.querySelector<HTMLElement>('.ws-hero');
       const at = (d: number) => (first ? d + 1.2 : d); // after the curtain on a first visit
@@ -288,9 +302,10 @@ export function SiteReveal() {
       if (foot) gsap.from(foot.children, { yPercent: 40, opacity: 0, ease: 'none', stagger: 0.05,
         scrollTrigger: { trigger: foot, start: 'top bottom', end: 'top 45%', scrub: 0.6 } });
       ScrollTrigger.refresh();
+      });
     });
-    return () => { ws.classList.remove('wsm-on'); ScrollTrigger.defaults({ scroller: window }); };
-  });
+    return () => { disposed = true; ws.classList.remove('wsm-on'); ScrollTrigger.defaults({ scroller: window }); };
+  }, { dependencies: [motionMode], revertOnUpdate: true });
 
   return curtain ? <Curtain name={curtain} onDone={() => setCurtain(null)} /> : null;
 }
@@ -351,7 +366,7 @@ export function SpaceEnquiry({ project, space, title, preview = false }: { proje
     }
   };
 
-  if (status === 'done') return <p className="ws-ask-done" role="status">Thank you. We’ll be in touch within a working day.</p>;
+  if (status === 'done') return <p className="ws-ask-done" role="status">Your enquiry has been sent. The team will reply using the contact details you provided.</p>;
   return (
     <form className="ws-ask-form" onSubmit={send} noValidate>
       <input aria-label="Name" placeholder="Name" maxLength={100} value={v.name} onChange={set('name')} autoComplete="name" />
@@ -379,17 +394,20 @@ export function SpaceEnquiry({ project, space, title, preview = false }: { proje
  * shows the open tab. Any link to something inside a closed tab (#stay,
  * #reserve-<place>, Book now, Book this room) opens that tab, then scrolls to it.
  */
-export function BookingDesk({ tabs }: { tabs: { id: string; label: string; node: React.ReactNode }[] }) {
+export function BookingDesk({ tabs, motionMode = 'calm' }: { tabs: { id: string; label: string; node: React.ReactNode }[]; motionMode?: 'calm' | 'expressive' | 'none' }) {
   const [on, setOn] = useState(tabs[0]?.id ?? '');
+  const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const open = () => {
-      const id = decodeURIComponent(location.hash.slice(1));
+      let id = '';
+      try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
       const el = id ? document.getElementById(id) : null;
       const panel = el?.closest<HTMLElement>('[data-desk-tab]');
       if (!el || !panel || !ref.current?.contains(panel)) return;
       setOn(panel.dataset.deskTab!);
-      requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      // Align the tab strip, not the panel nested below it, beneath the fixed header.
+      requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }));
     };
     // the same link twice fires no hashchange: read the hash after any in-page link click too
     const onClick = (e: MouseEvent) => {
@@ -402,17 +420,24 @@ export function BookingDesk({ tabs }: { tabs: { id: string; label: string; node:
   }, []);
   return (
     <div className="ws-desk-in" ref={ref}>
-      <div className="ws-desk-tabs" role="tablist" aria-label="What to book">
+      <div className="ws-desk-tabs" role="tablist" aria-label="What to book" onKeyDown={(e) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+        e.preventDefault();
+        const index = tabs.findIndex(t => t.id === on);
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (index + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        setOn(tabs[next].id);
+        e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+      }}>
         {tabs.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-selected={t.id === on} aria-controls={`desk-${t.id}`}
+          <button key={t.id} id={`ws-desk-tab-${t.id}`} type="button" role="tab" aria-selected={t.id === on} aria-controls={`desk-${t.id}`} tabIndex={t.id === on ? 0 : -1}
             className={t.id === on ? 'is-on' : ''} onClick={() => setOn(t.id)}>
-            {t.id === on && <motion.span layoutId="ws-desk-pill" className="ws-desk-pill" transition={{ type: 'spring', stiffness: 380, damping: 34 }} />}
+            {t.id === on && (motionMode === 'expressive' && !reduced ? <motion.span layoutId="ws-desk-pill" className="ws-desk-pill" transition={{ type: 'spring', stiffness: 380, damping: 34 }} /> : <span className="ws-desk-pill" />)}
             <span>{t.label}</span>
           </button>
         ))}
       </div>
       {tabs.map((t) => (
-        <div key={t.id} id={`desk-${t.id}`} role="tabpanel" data-desk-tab={t.id} hidden={t.id !== on} className="ws-desk-panel">
+        <div key={t.id} id={`desk-${t.id}`} role="tabpanel" aria-labelledby={`ws-desk-tab-${t.id}`} data-desk-tab={t.id} hidden={t.id !== on} className="ws-desk-panel">
           {t.node}
         </div>
       ))}

@@ -12,7 +12,7 @@
 import { Router } from 'express';
 import { saveLead, listLeads, setLeadDelivery } from '../leadsStore.js';
 import { requireAdmin } from '../middleware/auth.js';
-import { getScene, getProperty } from '../store.js';
+import { getPublishedScene, getProperty } from '../store.js';
 import { sendLeadEmail } from '../mailer.js';
 import { cleanSource } from '../stats.js';
 import { validPhone, validEmail, PHONE_WRONG } from '../notify.js';
@@ -60,9 +60,10 @@ leadsRouter.post('/', async (req, res, next) => {
     // trust), or, from a project's hub page, that project if it exists.
     const sceneId = clean(body.sceneId);
     let propertyId = null;
-    const scene = sceneId !== 'hub' ? await getScene(sceneId).catch(() => null) : null;
+    const scene = sceneId !== 'hub' ? await getPublishedScene(sceneId) : null;
     if (scene) propertyId = scene.propertyId ?? null;
     else if (sceneId === 'hub' && typeof body.propertyId === 'string' && (await getProperty(body.propertyId))) propertyId = body.propertyId;
+    if (!scene && !propertyId) return res.status(404).json({ error: 'That published space or project does not exist.' });
     // A project that switched enquiries off takes none, even from a page published before.
     if (propertyId && !(await getProperty(propertyId))?.features.enquiries) {
       return res.status(403).json({ error: 'This place doesn’t take enquiries here. Contact it directly.' });

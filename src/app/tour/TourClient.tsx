@@ -73,8 +73,9 @@ export default function TourClient() {
       // project as the space it opens on (§5.1). Never another hotel's rooms,
       // and never fetch theirs either: every doc read here delays the first frame.
       const project = list.find((g) => g.id === start)?.propertyId ?? null;
-      const docs = await Promise.all(list.filter((g) => (g.propertyId ?? null) === project).map((g) => loadSceneDoc(g.id, 'published')));
-      const same = docs.filter((d): d is SceneDoc => !!d && (d.propertyId ?? null) === project);
+      const mine = list.filter((g) => (g.propertyId ?? null) === project);
+      const opening = await loadSceneDoc(start, 'published');
+      if (!opening || (opening.propertyId ?? null) !== project) return setGate({ kind: 'offline' });
       // the project's own name, colour, font, logo and WhatsApp (per-project branding)
       if (project) {
         const t = await getProjectTheme(project).catch(() => null);
@@ -82,8 +83,11 @@ export default function TourClient() {
         const mono = new URLSearchParams(location.search).has('mono');
         if (t) applyTheme(mono ? { ...t.theme, accent: undefined } : t.theme, t.title, t.whatsapp ?? null, t.features);
       }
-      hydrateScenes(same.map(toApiScene));
-      limitTour(same.map((d) => d.id), start);
+      // Gallery metadata supplies menu labels. Full sibling documents are
+      // loaded only when selected, so one slow sibling cannot block opening.
+      hydrateScenes(mine.map((g) => ({ ...g, tagline: g.tagline ?? undefined })));
+      hydrateScenes([toApiScene(opening)]);
+      limitTour(mine.map((d) => d.id), start);
       setGate({ kind: 'ready' });
     })().catch(() => setGate({ kind: 'offline' }));
   }, []);

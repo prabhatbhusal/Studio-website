@@ -19,6 +19,8 @@ npm-debug.log*
 
 # Env
 .env
+.env.*
+!.env.example
 .env.local
 .env*.local
 server/.env
@@ -43,6 +45,9 @@ server/src/data/stats/
 server/src/data/sites/
 server/src/backups/
 server/src/data/reservations/
+server/src/data/attachments/
+server/src/data/upload-owners/
+server/src/data/.api.lock
 
 # Footage masters (4K, hundreds of MB). The web cuts made from them live in
 # public/media/ and are committed; see public/media/README.md.

@@ -17,8 +17,11 @@ import { reservationsRouter } from './routes/reservations.js';
 import { demoEngineRouter } from './routes/demoEngine.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { acquireProcessLock } from './processLock.js';
+import { cleanupUploads } from './uploadStore.js';
 
 // Accounts in Postgres when DATABASE_URL is set (usersStore.js): bring its tables up to date first.
+if (process.env.NODE_ENV === 'production') acquireProcessLock();
 const db = process.env.DATABASE_URL ? await import('./db.js') : null;
 if (db) await db.migrate();
 
@@ -30,7 +33,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 // Live on the example secrets, anyone could sign themselves a studio session;
 // on a short one, a single session token lets them guess it offline, then do the same.
 for (const [k, min] of [['SESSION_SECRET', 32], ['EMBED_TOKEN_SECRET', 32], ['EDITOR_PASSWORD', 12]]) {
-  if (!DEV && (!process.env[k] || process.env[k].startsWith('change-me') || process.env[k].length < min)) {
+  if (!DEV && (!process.env[k] || /^(change-me|REPLACE_)/i.test(process.env[k]) || process.env[k].length < min)) {
     console.error(`[server] ${k} is unset, the example value or under ${min} characters; set it in server/.env (openssl rand -hex 32)`);
     process.exit(1);
   }
@@ -40,6 +43,10 @@ for (const [k, min] of [['SESSION_SECRET', 32], ['EMBED_TOKEN_SECRET', 32], ['ED
 // localhost port is the site too: Next moves to 3001 by itself when 3000 is
 // taken, and refusing it there broke every request.
 const ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:3000';
+if (!DEV) {
+  const origin = new URL(ORIGIN);
+  if (origin.protocol !== 'https:' || origin.origin !== ORIGIN) throw new Error('Production CLIENT_ORIGIN must be an exact HTTPS origin.');
+}
 const LOCALHOST = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const allowed = (origin) => !origin || origin === ORIGIN || (DEV && LOCALHOST.test(origin));
 
@@ -108,15 +115,23 @@ async function sameApiOn(port) {
 }
 
 function listen(port, tries = 0) {
-  const server = app.listen(port, () => {
+  const server = app.listen(port, process.env.HOST || (DEV ? undefined : '127.0.0.1'), () => {
     console.log(`[server] splatspace API listening on http://localhost:${port}`);
     if (port !== PORT) {
       console.warn(`[server] (not ${PORT}: it was taken). Point the site here: NEXT_PUBLIC_API_URL=http://localhost:${port}\n` +
         '[server] or start both with "npm run dev" at the project root, which does it for you.');
     }
   });
+  if (!DEV) {
+    const stop = () => {
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(1), 10000).unref();
+    };
+    process.once('SIGTERM', stop);
+    process.once('SIGINT', stop);
+  }
   server.on('error', async (err) => {
-    if (err.code !== 'EADDRINUSE' || tries >= 10) throw err;
+    if (!DEV || err.code !== 'EADDRINUSE' || tries >= 10) throw err;
     const stale = DEV && tries === 0 ? await sameApiOn(port) : null;
     if (stale) {
       console.warn(`[server] an earlier copy of this API (pid ${stale}) still holds :${port}; stopping it`);
@@ -129,6 +144,9 @@ function listen(port, tries = 0) {
   });
 }
 listen(PORT);
+const cleanup = () => cleanupUploads().catch((err) => console.error('[uploads] cleanup:', err.message));
+setInterval(cleanup, 60 * 60 * 1000).unref();
+cleanup();
 
 // Websites scheduled to go live (routes/sites.js), checked every 30 s.
 const tick = () => publishDue().then((n) => n && console.log(`[sites] published ${n} scheduled website(s)`)).catch((err) => console.warn('[sites] schedule:', err.message));

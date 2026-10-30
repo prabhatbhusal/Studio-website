@@ -27,7 +27,8 @@ import { getUserById, getUserByEmail } from '../usersStore.js';
 import { freshSession as fresh, refuseStaff } from '../access.js';
 import { createStaffAccount } from '../usersStore.js';
 import { record, recent } from '../activity.js';
-import { removeSite } from './sites.js';
+import { removeSite, readSite } from './sites.js';
+import { bookingTimezone } from '../calendar.js';
 import { readReservations, nowIn } from '../reservations.js';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -217,10 +218,9 @@ propertiesRouter.put('/:id/status', requireEditorSession, wrap(async (req, res) 
  *  a reply (counted as its home counts them) and enquiries in the last 7 days. */
 const WEEK = 7 * 24 * 3600 * 1000;
 async function waitingOn(p, leads) {
-  // ponytail: Kathmandu's day, not each venue's timezone; a request can count a day late near midnight elsewhere.
-  const today = nowIn('Asia/Kathmandu').date;
+  const today = nowIn(bookingTimezone((await readSite(p.id))?.published)).date;
   const bookings = p.features.reservations
-    ? (await readReservations(p.id)).filter((r) => r.kind !== 'wait' && r.status === 'requested' && (r.checkout ?? r.date) >= today).length
+    ? (await readReservations(p.id)).filter((r) => r.kind !== 'wait' && r.status === 'requested' && (r.checkout ? r.checkout > today : r.date >= today)).length
     : 0;
   const enquiries = p.features.enquiries ? leads.filter((l) => l.propertyId === p.id && Date.now() - Date.parse(l.createdAt) < WEEK).length : 0;
   return { bookings, enquiries };

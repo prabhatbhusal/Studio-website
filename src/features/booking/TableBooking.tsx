@@ -88,7 +88,7 @@ export function TableBooking({ project, booking, tourSpace, preview = false, ini
   const pickedTime = slot && timeWorks(slot) ? time : '';
   const chosen = pickedTable && pickedTable !== 'any' ? byId(pickedTable)! : null;
   const ready = !!(avail && pickedTime && pickedTable);
-  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.current?.closest<HTMLElement>('.ws')?.dataset.motion === 'none';
   // What's on screen right now, in this panel: GSAP warns about an empty target, and the
   // free tables, times or form are often not there yet (loading, nothing free).
   const onScreen = (sel: string) => gsap.utils.toArray<Element>(sel, root.current);

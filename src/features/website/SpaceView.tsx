@@ -2,7 +2,6 @@ import Image from 'next/image';
 import { API_BASE_URL, photoSize, type PublicSite } from '../../lib/api';
 import { SiteReveal, SiteTour, SpaceEnquiry } from './SiteParts';
 import { SiteNav } from './SiteNav';
-import { SmoothScroll } from '../marketing/layout/SmoothScroll';
 import { SiteFooter, siteBasics } from './SiteView';
 import '../tour/viewer.css';
 import './website.css';
@@ -43,16 +42,16 @@ export function SpaceView({ data, space }: { data: PublicSite; space: string }) 
   const price = stay?.price ? `${stay.price} ${stay.per}`.trim() : hall?.price || '';
 
   // Book now: this space's own booking on the hub, else the site's main button
-  const book: [string, string] | null = hall && site.events ? [`${home}#events`, 'Book now']
-    : stay && site.stays ? [`${home}#stay`, 'Book now']
-    : cta[1] === 'Book now' ? [`${home}${cta[0]}`, 'Book now'] : null;
+  const book: [string, string] | null = hall && site.events ? [`${home}#events`, 'Request an event']
+    : stay && site.stays ? [`${home}#stay`, 'Check availability']
+    : cta[0] !== '#contact' ? [`${home}${cta[0]}`, cta[1]] : null;
   const chapters: [string, string][] = [['tour', 'Spaces'], ...(site.gallery.length ? [['gallery', 'Gallery'] as [string, string]] : []), ['contact', 'Contact']];
   const others = spaces.filter((s) => s.id !== space);
   const src = `/tour?space=${encodeURIComponent(sp.id)}&embed=1&mono=1&key=${encodeURIComponent(sp.key)}`;
 
   return (
-    <div className="ws ws-space-page" data-style={site.style ?? 'heritage'} style={style}>
-      <SiteNav name={name} logo={logo} base={home} chapters={chapters} cta={book ?? [`${home}${cta[0]}`, cta[1]]} reach={navReach} />
+    <div className="ws ws-space-page" data-style={site.style ?? 'heritage'} data-motion={site.presentation?.motion ?? 'calm'} style={style}>
+      <SiteNav name={name} logo={logo} base={home} chapters={chapters} cta={book ?? [`${home}${cta[0]}`, cta[1]]} reach={navReach} motionMode={site.presentation?.motion} />
 
       <nav className="ws-crumb" aria-label="Breadcrumb">
         <a href={`${home}#tour`}>← Back to all spaces</a>
@@ -80,7 +79,7 @@ export function SpaceView({ data, space }: { data: PublicSite; space: string }) 
         </div>
         <aside id="enquire" className="ws-space-ask">
           <h2>Enquire</h2>
-          <p>Tell us your dates, how many of you and what you need. We answer within a working day.</p>
+          <p>{site.presentation?.bookingNote || 'Tell us your dates, how many of you and what you need. The team will reply to discuss availability.'}</p>
           {asks
             ? <SpaceEnquiry project={project.id} space={sp.id} title={sp.title} />
             : <p>Call or message us using the buttons below.</p>}
@@ -111,8 +110,7 @@ export function SpaceView({ data, space }: { data: PublicSite; space: string }) 
         {navReach.call && <a className="ws-act" href={navReach.call}>Call</a>}
         {!book && asks && <a className="ws-btn" href="#enquire">Enquire</a>}
       </div>
-      <SiteReveal />
-      <SmoothScroll root=".ws" magnetic=".ws-btn, .wsn-ic, .ws-act" />
+      <SiteReveal motionMode={site.presentation?.motion} />
     </div>
   );
 }

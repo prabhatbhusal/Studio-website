@@ -1,0 +1,8 @@
+// Temporary read-only design fixture; removed after verification.
+import { API_BASE_URL } from '../../lib/api';
+import DesignHarness from './DesignHarness';
+export const dynamic = 'force-dynamic';
+export default async function Page() {
+  const data = await fetch(`${API_BASE_URL}/api/sites/chyasal-house`, { cache: 'no-store' }).then(r => r.json());
+  return <DesignHarness data={data} />;
+}

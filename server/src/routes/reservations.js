@@ -36,7 +36,7 @@ import { DATA_DIR, writeFileWhole } from '../dataDir.js';
 import { engineBooked } from '../engine.js';
 import { requireEditorSession } from '../middleware/auth.js';
 import { visibleProject, staffProject } from './properties.js';
-import { readSite, liveBooking, liveStays, publicStays, liveEvents, publicEvents, cleanSite, reviewed } from './sites.js';
+import { readSite, liveBooking, liveStays, publicStays, liveEvents, publicEvents, cleanSite, reviewed, spacePlans } from './sites.js';
 import { sendMail, teamRecipients, venueMail } from '../mailer.js';
 import { record } from '../activity.js';
 import {
@@ -47,9 +47,22 @@ import { SESSIONS, SESSION_LABEL, eventCalendar, eventProblem, hallFree, hallHot
 import { WAIT_STATUSES, waitersWithSpace } from '../waitlist.js';
 import { textGuest, validPhone, validEmail, PHONE_WRONG } from '../notify.js';
 import { rateLimiter } from '../rateLimit.js';
+import { validDate, daysBetween, bookingTimezone } from '../calendar.js';
+import { serialMutation } from '../serial.js';
 
 export const reservationsRouter = Router();
-const wrap = (fn) => (req, res, next) => fn(req, res).catch(next);
+const wrap = (fn) => {
+  const mutate = serialMutation(fn);
+  return (req, res, next) => (req.method === 'GET' ? fn(req, res) : mutate(req, res)).catch(next);
+};
+
+reservationsRouter.get('/:id/clock', wrap(async (req, res) => {
+  const p = await getProperty(req.params.id);
+  if (!p) return res.status(404).json({ error: 'That venue does not exist.' });
+  const site = cleanSite((await readSite(p.id))?.published, p.id);
+  const timezone = req.query.kind === 'stay' ? site.stays.timezone : site.booking.timezone;
+  res.json({ timezone, today: nowIn(timezone).date });
+}));
 
 const NO_BOOKING = { error: 'This place doesn’t take table bookings online.' };
 const NO_STAYS = { error: 'This place doesn’t take room bookings online.' };
@@ -67,12 +80,19 @@ async function bookingOf(pid, outlet = '') {
 async function staysOf(pid) {
   const p = await getProperty(pid);
   const cfg = p ? liveStays((await readSite(p.id))?.published) : null;
+  if (cfg) await refuseLegacyInventory(p.id, 'room');
   return cfg ? { p, cfg } : null;
 }
 async function eventsOf(pid) {
   const p = await getProperty(pid);
   const cfg = p ? liveEvents((await readSite(p.id))?.published) : null;
+  if (cfg) await refuseLegacyInventory(p.id, 'hall');
   return cfg ? { p, cfg } : null;
+}
+async function refuseLegacyInventory(pid, kind) {
+  if ((await readReservations(pid)).some((r) => r.kind === 'request' && r.of === kind && LIVE.includes(r.status))) {
+    throw Object.assign(new Error('This venue must reconcile its earlier tour bookings before accepting website bookings. Contact the venue directly.'), { status: 409 });
+  }
 }
 
 // A project that switched reservations off (store.js FEATURES) takes none,
@@ -382,6 +402,10 @@ async function roomHotspot(p, space, hotspot) {
   const snap = await getPublishedScene(space).catch(() => null);
   return snap && snap.propertyId === p.id ? (snap.hotspots ?? []).find((h) => h.id === hotspot && h.type === 'room') ?? null : null;
 }
+// Use one channel per resource kind until website and tour IDs are mapped.
+function websiteOwnsKind(published, kind) {
+  return kind === 'room' ? !!liveStays(published) : kind === 'hall' ? !!liveEvents(published) : false;
+}
 /** The nights of a stay a room hotspot can't be had (sorted): booked here (stays.js roomHotspotBooked),
  *  or taken in the hotel's own engine when the hotspot names one (engine.js). `engine` false: it couldn't say. */
 async function roomBooked(p, space, hs, stay) {
@@ -393,9 +417,12 @@ async function roomBooked(p, space, hs, stay) {
 
 // Which nights of a stay a room hotspot is booked (nothing personal): the tour's Book now strikes them out.
 reservationsRouter.get('/:id/requests/rooms', wrap(async (req, res) => {
+  if (availabilityLimited(req.ip || 'unknown')) return res.status(429).json({ error: 'Too many availability checks. Try again shortly.' });
   const p = await getProperty(req.params.id);
   const { space, hotspot, checkin, checkout } = req.query;
-  if (!DATE.test(String(checkin ?? '')) || !DATE.test(String(checkout ?? '')) || nightsOf(checkin, checkout).length > 60) {
+  const guests = Number(req.query.guests ?? 1);
+  const nights = nightsOf(checkin, checkout).length;
+  if (!validDate(checkin) || !validDate(checkout) || nights < 1 || nights > 60 || !Number.isInteger(guests) || guests < 1 || guests > 5000) {
     return res.status(400).json({ error: 'Which room, and which nights?' });
   }
   const hs = await roomHotspot(p, space, hotspot);
@@ -403,7 +430,8 @@ reservationsRouter.get('/:id/requests/rooms', wrap(async (req, res) => {
   res.json(await roomBooked(p, space, hs, { checkin, checkout, guests: Number(req.query.guests) || 1 }));
 }));
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const DATE = { test: validDate };
+const availabilityLimited = rateLimiter(120);
 const HM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const words = (v, n) => (typeof v === 'string' ? v.replace(/[<>]/g, '').trim().slice(0, n) : '');
 /** A booking request's when, in words: the nights, the part of the day, or the time. */
@@ -421,6 +449,9 @@ reservationsRouter.post('/:id/requests', wrap(async (req, res) => {
   const snap = p && space ? await getPublishedScene(space).catch(() => null) : null;
   const hs = snap && snap.propertyId === p.id ? (snap.hotspots ?? []).find((h) => h.id === body.hotspot && BOOKABLE.includes(h.type)) : null;
   if (!hs) return res.status(404).json({ error: 'This can’t be booked here. Send an enquiry instead.' });
+
+  const publishedSite = (await readSite(p.id))?.published;
+  if (websiteOwnsKind(publishedSite, hs.type)) return res.status(409).json({ error: 'Use this venue’s website booking form for rooms or halls so all bookings use the same availability.' });
 
   // the table-booking hours (and the place's clock), set up or not
   const hours = cleanSite((await readSite(p.id))?.published, p.id).booking;
@@ -547,7 +578,7 @@ reservationsRouter.get('/:id/reservations', requireEditorSession, wrap(async (re
   const events = published?.events ?? null;
   const dining = published?.dining ?? [];
   const list = (await readReservations(p.id)).map(noIp).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
-  res.json({ reservations: list, booking, stays, events, dining, hotspots: await bookableHotspots(p.id), today: nowIn(booking?.timezone || stays?.timezone || events?.timezone || 'Asia/Kathmandu').date });
+  res.json({ reservations: list, booking, stays, events, dining, hotspots: await bookableHotspots(p.id), today: nowIn(bookingTimezone(published)).date });
 }));
 
 /** The project's published room, hall and table hotspots, for "Mark as booked". */
@@ -576,11 +607,13 @@ reservationsRouter.post('/:id/reservations/mark', requireEditorSession, wrap(asy
   const note = words(b.note, 120);
   const team = { name: 'Booked (marked by the team)', phone: '', email: '', notes: note, blocked: true, status: 'confirmed' };
   let made;
-  const nightsOk = DATE.test(String(b.checkin ?? '')) && DATE.test(String(b.checkout ?? '')) && nightsOf(b.checkin, b.checkout).length >= 1 && nightsOf(b.checkin, b.checkout).length <= 366;
+  const duration = daysBetween(b.checkin, b.checkout);
+  const nightsOk = duration >= 1 && duration <= 366;
   if (b.space && b.hotspot) {
     const snap = await getPublishedScene(String(b.space)).catch(() => null);
     const hs = snap && snap.propertyId === p.id ? (snap.hotspots ?? []).find((h) => h.id === b.hotspot && BOOKABLE.includes(h.type)) : null;
     if (!hs) return res.status(404).json({ error: 'Pick one of the published rooms, halls or tables.' });
+    if (websiteOwnsKind(published, hs.type)) return res.status(409).json({ error: 'Mark this room or hall through the website inventory instead.' });
     const at = { kind: 'request', of: hs.type, item: words(hs.label, 80) || hs.type, space: snap.id, spaceTitle: words(snap.title, 80), hotspot: hs.id, party: 0, time: '' };
     if (hs.type === 'room') {
       if (!nightsOk) return res.status(400).json({ error: 'Pick the first night and the day it frees up.' });
@@ -598,12 +631,14 @@ reservationsRouter.post('/:id/reservations/mark', requireEditorSession, wrap(asy
       made = (list) => (hallHotspotFree(list, snap.id, hs.id, b.date, b.session) ? { ...at, date: b.date, session: b.session, occasion: 'Booked' } : null);
     }
   } else if (b.hall) {
+    await refuseLegacyInventory(p.id, 'hall');
     const hall = published?.events?.halls?.find((h) => h.id === b.hall);
     if (!hall) return res.status(404).json({ error: 'Pick one of the website’s halls.' });
     if (!DATE.test(String(b.date ?? '')) || !SESSIONS.includes(b.session)) return res.status(400).json({ error: 'Pick the day and the part of it.' });
     made = (list) => (hallFree(list, hall.id, b.date, b.session)
       ? { kind: 'event', hall: hall.id, hallLabel: hall.label, date: b.date, session: b.session, time: '', party: 0, occasion: 'Booked' } : null);
   } else if (b.room) {
+    await refuseLegacyInventory(p.id, 'room');
     const room = published?.stays?.rooms?.find((r) => r.id === b.room);
     if (!room) return res.status(404).json({ error: 'Pick one of the website’s room types.' });
     if (!nightsOk) return res.status(400).json({ error: 'Pick the first night and the day it frees up.' });
@@ -657,15 +692,23 @@ reservationsRouter.put('/:id/reservations/:rid/attachment', express.raw({ type: 
   const r = await withReservations(p.id, (list) => {
     const x = list.find((y) => y.id === req.params.rid);
     if (!x?.uploadKey || x.uploadKey.length !== key.length || !timingSafeEqual(Buffer.from(x.uploadKey), Buffer.from(key)) || Date.now() > x.uploadUntil) return null;
-    delete x.uploadKey;
-    delete x.uploadUntil;
-    x.attachment = { name, type: kind, bytes: body.length };
     return { ...x };
   });
   if (!r) return res.status(404).json({ error: 'That booking can’t take a file any more. Send it by email instead.' });
   await fs.mkdir(attachDir(p.id), { recursive: true });
-  await writeFileWhole(path.join(attachDir(p.id), `${r.id}.${kind}`), body);
-  res.json({ ok: true, attachment: r.attachment });
+  const attachment = await withReservations(p.id, async (list) => {
+    const x = list.find((y) => y.id === r.id);
+    if (!x?.uploadKey || x.uploadKey !== key || Date.now() > x.uploadUntil) return null;
+    // Only consume the key after storage succeeds. Queue also prevents two
+    // requests with the same key from writing different attachments.
+    await writeFileWhole(path.join(attachDir(p.id), `${r.id}.${kind}`), body);
+    x.attachment = { name, type: kind, bytes: body.length };
+    delete x.uploadKey;
+    delete x.uploadUntil;
+    return x.attachment;
+  });
+  if (!attachment) return res.status(409).json({ error: 'This upload key was already used. Refresh the booking.' });
+  res.json({ ok: true, attachment });
 }), (err, req, res, next) => {
   if (err.type === 'entity.too.large') return res.status(413).json({ error: 'That file is over 10 MB. Send a smaller one, or email it.' });
   next(err);
@@ -687,6 +730,56 @@ reservationsRouter.get('/:id/reservations/:rid/attachment', requireEditorSession
   }).send(buf);
 }));
 
+// Staff review uses published configuration and excludes the request's own inventory hold.
+reservationsRouter.get('/:id/reservations/:rid/review', requireEditorSession, wrap(async (req, res) => {
+  const p = await staffProject(req, res);
+  if (!p) return;
+  const list = await readReservations(p.id);
+  const r = list.find((x) => x.id === req.params.rid);
+  if (!r || r.kind === 'wait') return res.status(404).json({ error: 'That reservation does not exist.' });
+  const site = (await readSite(p.id))?.published;
+  const others = list.filter((x) => x.id !== r.id);
+  let plan = null, markers = [], available = null;
+  let note = 'No floor plan is linked to this reservation.';
+  if (r.kind === 'request') {
+    const snap = await getPublishedScene(r.space).catch(() => null);
+    const hs = snap?.propertyId === p.id ? snap.hotspots?.find((h) => h.id === r.hotspot && h.type === r.of) : null;
+    if (hs) {
+      plan = (await spacePlans(snap.splat?.variants?.high?.assetId))[0] ?? null;
+      note = 'Space floor plan for reference. The requested hotspot is not mapped to a floor-plan pin.';
+      available = websiteOwnsKind(site, r.of) ? false : r.of === 'room'
+        ? !nightsOf(r.checkin, r.checkout).some((n) => roomHotspotBooked(others, r.space, r.hotspot).has(n))
+        : r.of === 'hall' ? hallHotspotFree(others, r.space, r.hotspot, r.date, r.session)
+          : tableFree(heldTables(others, r.space), cleanSite(site, p.id).booking, r.hotspot, r.date, r.time);
+      if (hs.payload?.availabilityUrl) note += ' Check the connected booking engine before confirming; this check covers this platform only.';
+    }
+  } else if (r.kind === 'stay') {
+    const rooms = site?.stays?.rooms ?? [];
+    const room = rooms.find((x) => x.id === r.room);
+    plan = site?.stays?.plan || null;
+    markers = rooms.filter((x) => x.pin).map((x) => ({ id: x.id, label: x.label, x: x.x, y: x.y, selected: x.id === r.room,
+      available: roomsFree(others, x, r.checkin, r.checkout) >= (r.rooms || 1) }));
+    available = room ? roomsFree(others, room, r.checkin, r.checkout) >= (r.rooms || 1) : null;
+    note = 'Pins represent room types, not assigned physical room numbers. Availability covers the full stay.';
+  } else if (r.kind === 'event') {
+    const hall = site?.events?.halls?.find((x) => x.id === r.hall);
+    available = hall ? hallFree(others, r.hall, r.date, r.session) : null;
+    if (hall?.space) {
+      const snap = await getPublishedScene(hall.space).catch(() => null);
+      if (snap?.propertyId === p.id) plan = (await spacePlans(snap.splat?.variants?.high?.assetId))[0] ?? null;
+    }
+  } else {
+    const cfg = r.outlet ? site?.dining?.find((d) => d.id === r.outlet)?.booking : site?.booking;
+    plan = cfg?.plan || null;
+    markers = (cfg?.tables ?? []).map((t) => ({ id: t.id, label: t.label, x: t.x, y: t.y, selected: t.id === r.table,
+      available: tableFree(atOutlet(others, r.outlet), cfg, t.id, r.date, r.time) }));
+    available = cfg?.tables?.some((t) => t.id === r.table) ? tableFree(atOutlet(others, r.outlet), cfg, r.table, r.date, r.time) : null;
+    note = 'Table availability is checked for the requested time and configured sitting duration.';
+  }
+  if ((r.kind === 'stay' || r.kind === 'event') && others.some((x) => x.kind === 'request' && x.of === (r.kind === 'stay' ? 'room' : 'hall') && LIVE.includes(x.status))) available = false;
+  res.set('Cache-Control', 'private, no-store').json({ reservation: noIp(r), plan, markers, available, note, checkedAt: new Date().toISOString() });
+}));
+
 // Confirm, decline, cancel or reopen a booking, re-checked so it can't double-book; tells the guest.
 reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(async (req, res) => {
   const p = await staffProject(req, res);
@@ -700,7 +793,7 @@ reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(as
   const cfgOf = (o) => (o ? published?.dining?.find((d) => d.id === o)?.booking : published?.booking) ?? { stay: 90 };
   // a hotspot's Book now: its table at that sitting, its hall for that part of the day (as the requests route
   // checks them), or, when confirming, its room on nights not already confirmed or marked booked
-  const requestFree = (others, x) => x.of === 'table'
+  const requestFree = (others, x) => websiteOwnsKind(published, x.of) ? false : x.of === 'table'
     ? tableFree(heldTables(others, x.space), cleanSite(published, p.id).booking, x.hotspot, x.date, x.time)
     : x.of === 'hall' ? hallHotspotFree(others, x.space, x.hotspot, x.date, x.session)
       : status !== 'confirmed' || !nightsOf(x.checkin, x.checkout).some((n) => roomHotspotBooked(others, x.space, x.hotspot).has(n));
@@ -708,10 +801,13 @@ reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(as
   const r = await withReservations(p.id, (list) => {
     const x = list.find((y) => y.id === req.params.rid);
     if (!x) return null;
+    if (req.body?.expectedStatus && req.body.expectedStatus !== x.status) return { stale: true };
+    const kind = x.kind === 'stay' ? 'room' : x.kind === 'event' ? 'hall' : null;
+    if (kind && LIVE.includes(status) && list.some((y) => y.kind === 'request' && y.of === kind && LIVE.includes(y.status))) return { taken: kind };
     if ((x.kind === 'wait') !== WAIT_STATUSES.includes(status)) return { wrong: true, kind: x.kind };
     // Taking back a declined or cancelled booking must not double-book its table or room.
     // (a room hotspot's request holds its nights only once confirmed, so confirming one is checked too)
-    if ((LIVE.includes(status) && !LIVE.includes(x.status)) || (status === 'confirmed' && x.status !== 'confirmed' && x.kind === 'request' && x.of === 'room')) {
+    if ((LIVE.includes(status) && !LIVE.includes(x.status)) || (status === 'confirmed' && x.status !== 'confirmed')) {
       const others = list.filter((y) => y !== x);
       const room = published?.stays?.rooms?.find((y) => y.id === x.room);
       const free = x.kind === 'request' ? requestFree(others, x)
@@ -723,6 +819,7 @@ reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(as
     const was = x.status;
     x.status = status;
     x.updatedAt = new Date().toISOString();
+    if (!x.blocked && ['confirmed', 'declined'].includes(status)) x.guestDelivery = { pending: true, status };
     // A table or room let go: whoever on the waitlist could now book is told, and marked told.
     if (LIVE.includes(was) && !LIVE.includes(status)) {
       freed = waitersWithSpace(list, (o) => liveBooking(published, o), liveStays(published));
@@ -733,6 +830,7 @@ reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(as
     return { ...x };
   });
   if (!r) return res.status(404).json({ error: 'That booking does not exist.' });
+  if (r.stale) return res.status(409).json({ error: 'Someone already changed this reservation. Refresh before deciding.' });
   if (r.wrong) {
     return res.status(400).json({ error: r.kind === 'wait'
       ? 'A waitlist entry can be notified or removed.' : 'A booking can be confirmed, declined, cancelled or reopened.' });
@@ -758,7 +856,7 @@ reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(as
   for (const w of freed) tellWaiter(p, w);
 
   // The guest hears back: by text where set up, and by email if they left one.
-  if (!['confirmed', 'declined'].includes(status)) return;
+  if (r.blocked || !['confirmed', 'declined'].includes(status)) return;
   const venue = venueOf(p);
   let mail;
   if (asked) {
@@ -800,7 +898,7 @@ reservationsRouter.patch('/:id/reservations/:rid', requireEditorSession, wrap(as
   Promise.all([textGuest(r.phone, short), r.email ? sendMail({ to: [r.email], ...mail, ...venueMail(p) }) : null])
     .then(([texted, mailed]) => withReservations(p.id, (list) => {
       const x = list.find((y) => y.id === r.id);
-      if (x) x.guestDelivery = { ...(mailed ?? { sent: false, reason: 'no email address' }), ...texted, at: new Date().toISOString() };
+      if (x && x.status === status && x.updatedAt === r.updatedAt) x.guestDelivery = { ...(mailed ?? { sent: false, reason: 'no email address' }), ...texted, pending: false, status, at: new Date().toISOString() };
     }))
     .catch((err) => console.warn('[reservations] guest message:', err.message));
 }));

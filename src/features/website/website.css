@@ -661,3 +661,61 @@ html[data-ws-intro] .ws::before {
   .wsn-scan, .ws-live::before, .ws-desk-panel:not([hidden]) { animation: none; }
   .ws-room-img img, .ws-gallery img, .ws-offer-img img, .ws-hl img, .ws-faq summary::after, .ws-menu-ic i { transition: none; }
 }
+
+/* Shared layout rules work with every GUI design and heading-font choice. */
+.ws :is(h1, h2, h3, .wsn-word, .wsn-t) { overflow-wrap: anywhere; }
+.ws :is(.ws-hero h1, .ws-head h2, .ws-room h3, .ws-offer h3, .ws-contact h2) { line-height: 1.12; }
+.ws[data-style] :is(.ws-hero h1, .ws-head h2) { line-height: 1.12; }
+.ws .ws-script { margin: 0 0 16px; padding: 0; rotate: none; translate: none; line-height: 1.2; }
+.ws .ws-hero-script { font-size: clamp(30px, 4.2vw, 64px); }
+.ws .ws-head .ws-script { font-size: clamp(28px, 3.6vw, 56px); }
+.ws[data-style='classic'] .ws-script { font-size: clamp(20px, 1.8vw, 26px); }
+.ws :is(.ws-hero h1, .ws-head h2) { max-width: min(19ch, 100%); }
+.ws .ws-head-lead { width: min(46ch, 100%); min-width: 0; overflow-wrap: anywhere; }
+.ws .ws-desk > .ws-head { width: var(--wide); margin-inline: auto; }
+.ws .ws-btn:focus-visible, .ws .ws-link:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.ws .ws-btn { letter-spacing: 0.05em; line-height: 1.3; padding-block: 12px; }
+.ws .wsn-cta { font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0; }
+.ws [id] { scroll-margin-top: 24px; }
+.ws .ws-chap { margin-top: clamp(64px, 10vw, 132px); }
+.ws:not([data-motion='expressive']) .ws-hero.has-photo { height: auto; min-height: 0; }
+.ws:not([data-motion='expressive']) .ws-arch { flex: none; height: clamp(300px, 45vw, 580px); clip-path: inset(0 8% round var(--arch-r) var(--arch-r) 0 0); }
+.ws[data-style='modern'] .ws-hero-in { align-items: flex-start; text-align: left; }
+.ws[data-style='modern'] .ws-arch, .ws[data-style='minimal'] .ws-arch { clip-path: none; width: var(--wide); align-self: center; }
+.ws[data-style='minimal'] .ws-hero h1 { font-size: clamp(30px, 4vw, 58px); letter-spacing: 0.08em; }
+.ws:not([data-motion='expressive']) .ws-htrack { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 28px; width: 100%; margin: 0; padding: 0; overflow: visible; }
+.ws:not([data-motion='expressive']) .ws-room { width: auto; min-width: 0; will-change: auto; }
+.ws:not([data-motion='expressive']) .ws-room p { display: block; overflow: visible; }
+.ws .ws-booking-guidance { width: var(--wide); margin: 72px auto -32px; color: var(--dim); }
+.ws-stay-search { width: var(--wide); margin: 32px auto 0; padding: 20px; display: grid; grid-template-columns: 1fr 1fr minmax(90px, 0.5fr) auto; align-items: end; gap: 16px; background: var(--band); border: 1px solid var(--line); border-radius: var(--radius); }
+.ws-stay-search label { display: grid; gap: 6px; min-width: 0; font-size: 14px; }
+.ws-stay-search input { width: 100%; min-width: 0; min-height: 48px; border: 1px solid var(--line); border-radius: 6px; padding: 10px; font: inherit; font-size: 16px; background: var(--card); color: var(--ink); box-sizing: border-box; }
+.ws-stay-search .ws-btn { margin: 0; min-height: 48px; }
+.ws-stay-search > p { grid-column: 1 / -1; margin: 0; }
+.ws .ws-desk { padding-block: clamp(48px, 8vw, 96px); margin-top: clamp(64px, 10vw, 132px); }
+.ws .ws-desk-tabs { scroll-margin-top: 100px; }
+.ws .ws-desk-tabs button { text-transform: none; letter-spacing: 0; line-height: 1.4; }
+.ws[data-motion='none'], .ws[data-motion='none'] * { scroll-behavior: auto !important; }
+.ws[data-motion='none'] *, .ws[data-motion='none'] *::before, .ws[data-motion='none'] *::after { animation: none !important; transition: none !important; }
+@media (max-width: 900px) {
+  .ws .ws-hero.has-photo { height: auto; min-height: 0; }
+  .ws .ws-arch { flex: none; height: 42svh; min-height: 240px; }
+  .ws .ws-htrack { display: grid; grid-template-columns: 1fr; width: 100%; margin: 0; padding: 0; overflow: visible; }
+  .ws .ws-room { width: auto; min-width: 0; }
+  .ws .ws-room p { display: block; overflow: visible; }
+  .ws .ws-stay-search { grid-template-columns: 1fr 1fr; }
+  .ws .ws-hero-in, .ws .ws-hero.has-photo .ws-hero-in { padding-top: calc(var(--bar) + 24px); }
+  .ws .ws-hero-script { font-size: clamp(28px, 6.8vw, 48px); }
+  .ws .ws-hero h1, .ws .ws-hero.has-photo h1 { font-size: clamp(30px, 7.6vw, 58px); }
+  .ws .ws-lede { margin-top: 18px; font-size: 16px; line-height: 1.65; }
+  .ws .ws-hero-ctas { gap: 8px; margin-top: 20px; }
+  .ws .ws-hero-ctas .ws-btn { min-height: 46px; padding-inline: 18px; font-size: 12px; }
+  .ws .wsn-cta { max-width: 160px; padding-inline: 14px; white-space: normal; text-align: center; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws .ws-hero.has-photo { height: auto; min-height: 0; }
+  .ws .ws-arch { flex: none; height: 42svh; }
+  .ws .ws-htrack { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); width: 100%; margin: 0; padding: 0; overflow: visible; }
+  .ws .ws-room { width: auto; }
+  .ws *, .ws *::before, .ws *::after { animation: none !important; transition: none !important; }
+}

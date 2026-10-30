@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { LCCRender } from '../../vendor/sdk/lcc-web-sdk.js';
-import { SCENE_BY_ID, metaPath, spawnFor, firstScene } from './scenes';
+import { SCENE_BY_ID, metaPath, spawnFor, firstScene, isPublicTour, hydrateScenes } from './scenes';
 import { buildLoadOptions, tuneCameraForRoom, resolveTier } from './lccConfig';
 import { persistMeasuredTier, createFpsMonitor, logTierLine } from './deviceTier';
 import { walkerCfg, scaleWalkerCfg } from './walkerConfig';
 import { withColliders } from './collision';
-import { collidersFor } from './sceneDoc';
+import { collidersFor, loadSceneDoc } from './sceneDoc';
 
 /** The SDK's per-scene renderer handle (collision, raycast, bounds — untyped,
  *  see @types/vendor.d.ts) plus our own load bookkeeping. */
@@ -104,9 +104,18 @@ export function useSceneManager({ dev = false, appKey = null }: { dev?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- vendor SDK renderer handle
   const [renderer, setRenderer] = useState<any>(null);
   const [unitScale, setUnitScale] = useState(1);
+  const loadSequence = useRef(0);
 
   const load = useCallback(
-    (sceneId: string) => {
+    async (sceneId: string) => {
+      const sequence = ++loadSequence.current;
+      if (isPublicTour()) {
+        const doc = await loadSceneDoc(sceneId, 'published');
+        if (sequence !== loadSequence.current) return;
+        if (!doc) { setFailed(true); setLoading(false); return; }
+        const high = doc.splat?.variants?.high;
+        hydrateScenes([{ ...doc, assetId: high?.assetId, meta: high?.meta, format: doc.splat?.format }]);
+      }
       const conf = SCENE_BY_ID[sceneId];
       if (!conf) {
         console.error(`[scene] unknown scene "${sceneId}"`);
@@ -267,7 +276,9 @@ export function useSceneManager({ dev = false, appKey = null }: { dev?: boolean;
   // Initial load + teardown.
   useEffect(() => {
     load(firstScene());
+    const sequenceRef = loadSequence;
     return () => {
+      sequenceRef.current++;
       if (current.current?.kind === 'mesh') current.current.renderer?.dispose();
       LCCRender.dispose();
       current.current = null;

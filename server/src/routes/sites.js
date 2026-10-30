@@ -32,6 +32,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Readable } from 'stream';
 import { DATA_DIR, writeFileWhole } from '../dataDir.js';
+import { serialMutation } from '../serial.js';
 import * as storage from '../storage.js';
 import { getProperty, getPublishedScene, getEmbed, listScenes, listPublished } from '../store.js';
 import { requireEditorSession } from '../middleware/auth.js';
@@ -39,17 +40,24 @@ import { visibleProject } from './properties.js';
 import { imageKind, imageSize } from './assets.js';
 import { embedKey } from './embed.js';
 import { record } from '../activity.js';
-import { removeReservations } from '../reservations.js';
+import { removeReservations, readReservations, LIVE } from '../reservations.js';
 import { EVENT_KINDS } from '../events.js';
 import { rateLimiter } from '../rateLimit.js';
 
 export const sitesRouter = Router();
-const wrap = (fn) => (req, res, next) => fn(req, res).catch(next);
+const wrap = (fn) => {
+  const run = serialMutation(fn);
+  return (req, res, next) => run(req, res).catch(next);
+};
 
 const SITES_DIR = path.join(DATA_DIR, 'sites');
 const fileOf = (pid) => path.join(SITES_DIR, `${pid}.json`);
 export async function readSite(pid) {
-  try { return JSON.parse(await fs.readFile(fileOf(pid), 'utf8')); } catch { return null; }
+  try {
+    const site = JSON.parse(await fs.readFile(fileOf(pid), 'utf8'));
+    if (!site || typeof site !== 'object' || Array.isArray(site)) throw new Error('Invalid website store.');
+    return site;
+  } catch (err) { if (err.code === 'ENOENT') return null; throw err; }
 }
 async function write(pid, data) {
   await fs.mkdir(SITES_DIR, { recursive: true });
@@ -66,7 +74,7 @@ const PLAN_FILES = ['uploaded.png', 'uploaded.jpg', 'uploaded.webp', 'plan.svg',
 const PLAN_FILE = /^[\w-]{1,80}\/floorplan\/(uploaded\.(png|jpg|webp)|plan(-print)?\.svg)$/;
 
 /** The floor plan files a space's scan has, as asset paths ("<asset>/floorplan/plan.svg"). */
-async function spacePlans(assetId) {
+export async function spacePlans(assetId) {
   if (!assetId || assetId.startsWith('local:')) return [];
   const have = await Promise.all(PLAN_FILES.map((f) => storage.stat(assetId, `floorplan/${f}`).then(() => true, () => false)));
   return PLAN_FILES.filter((_, i) => have[i]).map((f) => `${assetId}/floorplan/${f}`);
@@ -91,7 +99,12 @@ export function cleanSite(d, pid) {
   });
   d = d && typeof d === 'object' ? d : {};
   return {
+    revision: Number.isSafeInteger(d.revision) && d.revision >= 0 ? d.revision : 0,
     style: STYLES.includes(d.style) ? d.style : STYLES[0],
+    presentation: {
+      motion: ['calm', 'expressive', 'none'].includes(d.presentation?.motion) ? d.presentation.motion : 'calm',
+      bookingNote: s(d.presentation?.bookingNote, 240)
+    },
     hero: { eyebrow: s(d.hero?.eyebrow, 80), title: s(d.hero?.title, 120), lede: s(d.hero?.lede, 400), space: id(d.hero?.space), image: img(d.hero?.image) },
     facts: list(d.facts, 6, (f) => ({ n: s(f?.n, 20), k: s(f?.k, 60) })).filter((f) => f.n || f.k),
     story: { title: s(d.story?.title, 120), body: s(d.story?.body, 2000) },
@@ -357,6 +370,8 @@ sitesRouter.put('/:id/draft', requireEditorSession, wrap(async (req, res) => {
   if (!p) return;
   const saved = (await readSite(p.id)) ?? {};
   const draft = cleanSite(req.body, p.id);
+  if (draft.revision !== (saved.draft?.revision ?? 0)) return res.status(409).json({ error: 'This website changed in another tab. Reload it before saving.' });
+  draft.revision++;
   await write(p.id, { ...saved, draft });
   await record(req, p.id, 'saved the website', p.title);
   res.json({ draft, publishedAt: saved.publishedAt ?? null });
@@ -368,6 +383,8 @@ sitesRouter.post('/:id/publish', requireEditorSession, wrap(async (req, res) => 
   if (!p) return;
   const saved = await readSite(p.id);
   if (!saved?.draft) return res.status(409).json({ error: 'Save the website before publishing it.' });
+  const conflict = await inventoryConflict(p.id, saved.draft);
+  if (conflict) return res.status(409).json({ error: conflict });
   const publishedAt = new Date().toISOString();
   await write(p.id, { ...saved, published: saved.draft, publishedAt });
   await record(req, p.id, 'published the website', p.title);
@@ -388,6 +405,8 @@ sitesRouter.post('/:id/schedule', requireEditorSession, wrap(async (req, res) =>
   if (at > Date.now() + 366 * 86400000) return res.status(400).json({ error: 'Schedule it within a year.' });
   const saved = await readSite(p.id);
   if (!saved?.draft) return res.status(409).json({ error: 'Save the website before scheduling it.' });
+  const conflict = await inventoryConflict(p.id, saved.draft);
+  if (conflict) return res.status(409).json({ error: conflict });
   const scheduled = { at: new Date(at).toISOString(), site: saved.draft, by: { id: req.session.sub ?? null, name: req.session.name ?? null } };
   await write(p.id, { ...saved, scheduled });
   await record(req, p.id, 'scheduled the website', p.title, `live at ${scheduled.at}`);
@@ -409,7 +428,15 @@ sitesRouter.delete('/:id/schedule', requireEditorSession, wrap(async (req, res) 
 /** Put every website whose time has come live. Returns how many.
  *  ponytail: a studio save in the same millisecond could write back the old
  *  file; add a per-project write queue (like reservations.js) if that ever bites. */
-export async function publishDue(now = Date.now()) {
+export const publishDue = serialMutation(publishDueImpl);
+async function inventoryConflict(pid, site) {
+  const kinds = [liveStays(site) ? 'room' : null, liveEvents(site) ? 'hall' : null].filter(Boolean);
+  if (!kinds.length) return null;
+  const list = await readReservations(pid);
+  return list.some((r) => r.kind === 'request' && kinds.includes(r.of) && LIVE.includes(r.status))
+    ? 'Reconcile active tour room or hall bookings before enabling website booking for the same inventory.' : null;
+}
+async function publishDueImpl(now = Date.now()) {
   let files;
   try { files = await fs.readdir(SITES_DIR); } catch { return 0; }
   let done = 0;
@@ -417,6 +444,10 @@ export async function publishDue(now = Date.now()) {
     const pid = f.slice(0, -5);
     const saved = await readSite(pid);
     if (!saved?.scheduled || Date.parse(saved.scheduled.at) > now) continue;
+    if (await inventoryConflict(pid, saved.scheduled.site)) {
+      console.warn('[sites] Scheduled publication blocked by active tour inventory:', pid);
+      continue;
+    }
     const { scheduled, ...rest } = saved;
     await write(pid, { ...rest, published: scheduled.site, publishedAt: new Date(now).toISOString() });
     const by = scheduled.by?.id ? { session: { sub: scheduled.by.id, name: scheduled.by.name } } : { session: null };
@@ -428,7 +459,10 @@ export async function publishDue(now = Date.now()) {
 
 /* ---------------------------------------------------------------- client review */
 
-const draftHash = (draft) => createHash('sha1').update(JSON.stringify(draft ?? null)).digest('hex').slice(0, 16);
+const draftHash = (draft) => {
+  const { revision, ...content } = draft ?? {};
+  return createHash('sha1').update(JSON.stringify(content)).digest('hex').slice(0, 16);
+};
 const emptyReview = () => ({ key: null, comments: [], approval: null });
 
 /** The site file and its review, if `key` is its link's key (compared in constant time). */

@@ -5,7 +5,7 @@ import { SITE_URL, OG_IMAGE } from '../lib/shareMeta';
 import { BASE_PATH, withBase } from '../lib/basePath';
 
 
-// The one typeface everywhere (2026-10-05, the owner's choice): JetBrains Mono, as --font-ui.
+// Public surfaces retain their original UI face; studio loads Inter in its own layout.
 const ui = JetBrains_Mono({ subsets: ['latin'], weight: 'variable', variable: '--font-ui', display: 'swap' });
 
 export const metadata: Metadata = {

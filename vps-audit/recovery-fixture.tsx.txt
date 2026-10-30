@@ -1,0 +1,16 @@
+'use client';
+// Temporary fixture harness; removed after verification.
+import { useEffect, useReducer } from 'react';
+import { DraftRecovery } from '../../features/studio/RecoveryPanel';
+import { loadSceneDoc, subscribeDoc, setBooking, sceneDocFor, markSaved } from '../../features/scene/sceneDoc';
+import '../../features/studio/editor.css';
+export default function Check() {
+  const [, render] = useReducer(n => n + 1, 0);
+  useEffect(() => { const off = subscribeDoc(render); void loadSceneDoc('recovery-fixture'); return off; }, []);
+  return <div className="ed2" style={{ pointerEvents: 'auto', padding: 20, background: 'var(--ed-bg)' }}>
+    <DraftRecovery sceneId="recovery-fixture" />
+    <button onClick={() => setBooking('recovery-fixture', { label: 'Recovered booking', enabled: true })}>Edit fixture</button>
+    <button onClick={() => markSaved('recovery-fixture', structuredClone(sceneDocFor('recovery-fixture')))}>Simulate saved</button>
+    <output>{sceneDocFor('recovery-fixture').booking?.label || 'No edit'}</output>
+  </div>;
+}

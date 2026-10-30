@@ -1,3 +1,4 @@
+import { serialMutation } from './serial.js';
 /**
  * File-backed scene store. CLAUDE.md's actual plan is Django + DRF + Postgres;
  * this Node service is the pre-database stand-in, so the storage layer is
@@ -15,6 +16,7 @@ import path from 'path';
 import { migrateScene, CURRENT_VERSION } from './migrate.js';
 import { DATA_DIR, writeFileWhole } from './dataDir.js';
 import { phoneOf } from './notify.js';
+import { readRecord } from './records.js';
 
 const SCENES_DIR = path.join(DATA_DIR, 'scenes');
 const PROPERTIES_DIR = path.join(DATA_DIR, 'properties');
@@ -46,10 +48,10 @@ export async function listScenes() {
   const scenes = await Promise.all(
     files
       .filter(isDraftFile)
-      .map(async (f) => migrateScene(JSON.parse(await fs.readFile(path.join(SCENES_DIR, f), 'utf8'))))
+      .map(async (f) => { const doc = await readRecord(path.join(SCENES_DIR, f)); return doc ? migrateScene(doc) : null; })
   );
   // Only what the menu / spawn logic needs — not the full hotspot/track payload.
-  return scenes.map((s) => ({
+  return scenes.filter(Boolean).map((s) => ({
     id: s.id,
     title: s.title,
     tagline: s.tagline,
@@ -101,13 +103,18 @@ async function readRaw(file) {
 /** `creator`: the account saving a new space. It's recorded as the space's
  *  `ownerId`, which decides who may see it while it's in no project
  *  (access.js); the editor can't change it, like the publish fields. */
-export async function saveScene(id, doc, { creator = null } = {}) {
+export const saveScene = serialMutation(saveSceneImpl);
+async function saveSceneImpl(id, doc, { creator = null } = {}) {
   if (doc.id && doc.id !== id) throw Object.assign(new Error('id mismatch'), { status: 400 });
   // Publish state is owned by the publish routes below, not by the editor: a
   // studio tab opened before a publish would otherwise save its stale
   // `status` back and silently unpublish the space.
   const existing = await readRaw(sceneFile(id));
+  if (existing && (doc.revision ?? 0) !== (existing.revision ?? 0)) {
+    throw Object.assign(new Error('This scene changed in another tab. Reload it before saving.'), { status: 409 });
+  }
   const withId = { ...doc, id, version: doc.version ?? CURRENT_VERSION };
+  withId.revision = (existing?.revision ?? 0) + 1;
   for (const k of PUBLISH_FIELDS) {
     if (existing && k in existing) withId[k] = existing[k];
     else if (k === 'status') withId.status = 'draft';
@@ -188,13 +195,14 @@ export function publishChecks(doc) {
 /** Only http(s) links reach a visitor's page — never javascript: or data:. */
 export const isWebUrl = (u) => typeof u === 'string' && /^https?:\/\/\S+$/i.test(u.trim());
 
-export async function publishScene(id) {
+export const publishScene = serialMutation(publishSceneImpl);
+async function publishSceneImpl(id) {
   const draft = await getScene(id);
   if (!draft) return null;
   const { blockers, warnings } = publishChecks(draft);
   if (blockers.length) return { published: false, blockers, warnings };
 
-  const version = (draft.publishedVersion ?? 0) + 1;
+  const version = Math.max(draft.publishedVersion ?? 0, ...(await listVersions(id)).map((v) => v.version)) + 1;
   const publishedAt = new Date().toISOString();
   const snapshot = { ...draft, status: 'published', publishedVersion: version, publishedAt };
   // 'wx': a snapshot, once written, is never overwritten.
@@ -205,7 +213,8 @@ export async function publishScene(id) {
   return { published: true, version, publishedAt, warnings };
 }
 
-export async function unpublishScene(id) {
+export const unpublishScene = serialMutation(unpublishSceneImpl);
+async function unpublishSceneImpl(id) {
   const raw = await readRaw(sceneFile(id));
   if (!raw) return null;
   // Snapshots stay on disk as history; the draft just stops pointing at one.
@@ -223,7 +232,8 @@ export async function getPublishedScene(id) {
 }
 
 /** Throw away draft edits: the draft becomes the published snapshot again. */
-export async function revertToPublished(id) {
+export const revertToPublished = serialMutation(revertToPublishedImpl);
+async function revertToPublishedImpl(id) {
   const raw = await readRaw(sceneFile(id));
   if (!raw || raw.status !== 'published' || !raw.publishedVersion) return null;
   return restoreVersion(id, raw.publishedVersion);
@@ -250,13 +260,15 @@ export async function listVersions(id) {
  * un-retire snippets retired since) — and so does the project the space is
  * in. Everything else is that version's.
  */
-export async function restoreVersion(id, n) {
+export const restoreVersion = serialMutation(restoreVersionImpl);
+async function restoreVersionImpl(id, n) {
   const draft = await readRaw(sceneFile(id));
   if (!draft || !Number.isInteger(n)) return null;
   const snap = await readRaw(sceneFile(id, n));
   if (!snap) return null;
   const next = migrateScene(snap);
-  for (const k of [...PUBLISH_FIELDS, 'propertyId']) {
+  next.revision = (draft.revision ?? 0) + 1;
+  for (const k of [...PUBLISH_FIELDS, 'propertyId', 'ownerId']) {
     if (k in draft) next[k] = draft[k];
     else delete next[k];
   }
@@ -271,7 +283,8 @@ export async function restoreVersion(id, n) {
  */
 /** Moving a space out of its project makes it the mover's (`by`): out of a
  *  project, only its owner sees it. */
-export async function setSceneProperty(id, propertyId, by = null) {
+export const setSceneProperty = serialMutation(setScenePropertyImpl);
+async function setScenePropertyImpl(id, propertyId, by = null) {
   const raw = await readRaw(sceneFile(id));
   if (!raw) return null;
   if (propertyId !== null && !(await getProperty(propertyId))) throw badRequest('That project does not exist.');
@@ -288,7 +301,8 @@ export async function getEmbed(id) {
   return raw ? { version: 0, sites: [], ...(raw.embed ?? {}) } : null;
 }
 
-export async function setEmbed(id, patch) {
+export const setEmbed = serialMutation(setEmbedImpl);
+async function setEmbedImpl(id, patch) {
   const raw = await readRaw(sceneFile(id));
   if (!raw) return null;
   const embed = { version: 0, sites: [], ...(raw.embed ?? {}), ...patch };
@@ -325,7 +339,8 @@ const fillPropertyDefaults = (doc) => (doc ? { ownerId: null, members: [], staff
 export const FEATURES = ['enquiries', 'reservations', 'website', 'report', 'activity'];
 export const featuresOf = (p) => Object.fromEntries(FEATURES.map((k) => [k, p?.features?.[k] !== false]));
 /** Booleans for known features only; anything else is ignored. */
-export async function setPropertyFeatures(id, patch) {
+export const setPropertyFeatures = serialMutation(setPropertyFeaturesImpl);
+async function setPropertyFeaturesImpl(id, patch) {
   const p = await getProperty(id);
   if (!p) return null;
   const features = { ...p.features };
@@ -341,7 +356,8 @@ export async function setPropertyFeatures(id, patch) {
  *  an archived project's published tours and website stay up. A project from
  *  before has none, so it is in progress; `statusAt` is when it last changed. */
 export const PROJECT_STATUSES = ['in-progress', 'delivered', 'archived'];
-export async function setPropertyStatus(id, status) {
+export const setPropertyStatus = serialMutation(setPropertyStatusImpl);
+async function setPropertyStatusImpl(id, status) {
   if (!PROJECT_STATUSES.includes(status)) throw badRequest('Unknown status.');
   const p = await getProperty(id);
   if (!p) return null;
@@ -382,7 +398,8 @@ export function propertyIsManageable(property, session) {
  *  after which it's that account's alone. */
 export const propertyIsClaimable = (property, session) => !!session?.sub && property.ownerId === null;
 
-export async function claimProperty(id, userId) {
+export const claimProperty = serialMutation(claimPropertyImpl);
+async function claimPropertyImpl(id, userId) {
   const doc = await getProperty(id);
   if (!doc || doc.ownerId !== null) return null;
   const next = { ...doc, ownerId: userId };
@@ -420,7 +437,8 @@ function cleanTitle(title) {
 /** Throws 400 on a bad title, 409 if a property with the same id exists.
  *  `ownerId` is null for the legacy passwordless session, which has no
  *  account to own it — same as an old project's default, visible to all. */
-export async function createProperty(title, ownerId = null) {
+export const createProperty = serialMutation(createPropertyImpl);
+async function createPropertyImpl(title, ownerId = null) {
   const clean = cleanTitle(title);
   const id = propertyIdFor(clean);
   if (!id) throw badRequest('Use at least one letter or number in the name.');
@@ -443,7 +461,8 @@ export async function createProperty(title, ownerId = null) {
  * URL point at, so only the title a person reads changes (same rule as
  * renameScene on the client).
  */
-export async function renameProperty(id, title) {
+export const renameProperty = serialMutation(renamePropertyImpl);
+async function renamePropertyImpl(id, title) {
   const p = await getProperty(id);
   if (!p) return null;
   const next = { ...p, title: cleanTitle(title) };
@@ -458,7 +477,8 @@ export async function renameProperty(id, title) {
  */
 /** Its spaces are kept, out of any project, as the deleter's (`by`): they
  *  stay private to whoever had them. */
-export async function deleteProperty(id, by = null) {
+export const deleteProperty = serialMutation(deletePropertyImpl);
+async function deletePropertyImpl(id, by = null) {
   const p = await getProperty(id);
   if (!p) return null;
   let released = 0;
@@ -476,7 +496,8 @@ export async function deleteProperty(id, by = null) {
 /** Add a teammate (by user id) to a project: as a member (full access), or
  *  as the client's staff (enquiries, reservations, report). Adding someone
  *  already on it moves them to the access asked for. */
-export async function addPropertyMember(id, userId, as = 'member') {
+export const addPropertyMember = serialMutation(addPropertyMemberImpl);
+async function addPropertyMemberImpl(id, userId, as = 'member') {
   const p = await getProperty(id);
   if (!p) return null;
   if (p.ownerId === userId) return p; // the owner already sees it
@@ -494,7 +515,8 @@ export async function addPropertyMember(id, userId, as = 'member') {
 // src/lib/brandFonts.ts: the ten (2026-10-07), then older projects' system faces
 export const BRAND_FONTS = ['inter', 'roboto', 'open-sans', 'poppins', 'montserrat', 'lato', 'nunito', 'playfair', 'merriweather', 'dm-sans', 'serif', 'sans', 'classic'];
 
-export async function setPropertyTheme(id, patch) {
+export const setPropertyTheme = serialMutation(setPropertyThemeImpl);
+async function setPropertyThemeImpl(id, patch) {
   const p = await getProperty(id);
   if (!p) return null;
   const theme = { ...(p.theme ?? {}) };
@@ -525,7 +547,8 @@ export async function setPropertyTheme(id, patch) {
  *  empty field removes it. */
 export const INFO_FIELDS = { tagline: 120, about: 1200, phone: 40, whatsapp: 40, email: 200, address: 300, website: 300, facebook: 300, instagram: 300 };
 const URL_FIELDS = ['website', 'facebook', 'instagram'];
-export async function setPropertyInfo(id, patch) {
+export const setPropertyInfo = serialMutation(setPropertyInfoImpl);
+async function setPropertyInfoImpl(id, patch) {
   const p = await getProperty(id);
   if (!p) return null;
   const info = { ...(p.info ?? {}) };
@@ -558,7 +581,8 @@ export async function setPropertyInfo(id, patch) {
 }
 
 /** Who a project's enquiries are emailed to (routes/leads.js). Up to 10. */
-export async function setLeadEmails(id, emails) {
+export const setLeadEmails = serialMutation(setLeadEmailsImpl);
+async function setLeadEmailsImpl(id, emails) {
   const p = await getProperty(id);
   if (!p) return null;
   const clean = [...new Set((Array.isArray(emails) ? emails : []).map((e) => String(e).trim().toLowerCase()).filter(Boolean))];
@@ -573,7 +597,8 @@ export async function setLeadEmails(id, emails) {
 /** A removed account: the projects it owned pass to `toId` (the admin who
  *  removed it; null for the legacy session: open to all), and it leaves every
  *  member list. Returns how many projects changed owner. */
-export async function reassignProjects(userId, toId) {
+export const reassignProjects = serialMutation(reassignProjectsImpl);
+async function reassignProjectsImpl(userId, toId) {
   let moved = 0;
   for (const p of await listProperties()) {
     const owned = p.ownerId === userId;
@@ -589,7 +614,8 @@ export async function reassignProjects(userId, toId) {
   return moved;
 }
 
-export async function removePropertyMember(id, userId) {
+export const removePropertyMember = serialMutation(removePropertyMemberImpl);
+async function removePropertyMemberImpl(id, userId) {
   const p = await getProperty(id);
   if (!p) return null;
   const next = { ...p, members: p.members.filter((m) => m !== userId), staff: p.staff.filter((m) => m !== userId) };
@@ -603,7 +629,13 @@ export async function listPublished() {
   const out = [];
   for (const f of files) {
     const id = f.slice(0, -5);
-    const snap = await getPublishedScene(id);
+    let snap;
+    try { snap = await getPublishedScene(id); }
+    catch (err) {
+      if (!(err instanceof SyntaxError)) throw err;
+      console.error('[store] Invalid scene; recover from backup:', id);
+      continue;
+    }
     if (!snap) continue;
     out.push({
       id,

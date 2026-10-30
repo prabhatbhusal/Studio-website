@@ -12,6 +12,10 @@
  * has the last word.
  */
 import { nightsOf } from './stays.js';
+import http from 'node:http';
+import https from 'node:https';
+import { lookup } from 'node:dns';
+import { BlockList, isIP } from 'node:net';
 
 const day = (d) => Math.floor(Date.parse(`${d}T12:00:00Z`) / 86400000);
 const hash = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
@@ -24,8 +28,45 @@ export function demoBooked(params) {
 }
 
 const cache = new Map(); // filled-in link -> { at, booked }
-// ponytail: names, not resolved addresses; a hostname pointing at a private address still passes. Resolve first if links come from strangers.
-const PRIVATE_HOST = /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[)/i;
+const pending = new Map();
+let active = 0;
+const denied = new BlockList();
+for (const [ip, prefix] of [['0.0.0.0',8],['10.0.0.0',8],['100.64.0.0',10],['127.0.0.0',8],['169.254.0.0',16],['172.16.0.0',12],['192.168.0.0',16],['192.0.0.0',24],['192.0.2.0',24],['198.18.0.0',15],['198.51.100.0',24],['203.0.113.0',24],['224.0.0.0',3]]) denied.addSubnet(ip,prefix,'ipv4');
+const globalV6 = new BlockList();
+globalV6.addSubnet('2000::',3,'ipv6');
+export const publicAddress = (address) => isIP(address) === 4 ? !denied.check(address,'ipv4')
+  : isIP(address) === 6 && globalV6.check(address,'ipv6') && !address.toLowerCase().startsWith('2001:db8:');
+
+// Resolve in the actual connection lookup, not in a separate preflight: the
+// verified IP is the one used by the socket, preventing DNS rebinding.
+function safeLookup(host, options, callback) {
+  lookup(host, { all: true, verbatim: true }, (err, addresses) => {
+    if (err) return callback(err);
+    if (!addresses.length || addresses.some((x) => !publicAddress(x.address))) return callback(new Error('Engine address is private.'));
+    if (options?.all) callback(null, addresses);
+    else callback(null, addresses[0].address, addresses[0].family);
+  });
+}
+
+function readEngine(url, production) {
+  return new Promise((resolve, reject) => {
+    const client = url.protocol === 'https:' ? https : http;
+    const req = client.get(url, { agent: false, headers: { accept: 'application/json' }, ...(production ? { lookup: safeLookup } : {}) }, (res) => {
+      if (res.statusCode !== 200) { res.resume(); return reject(new Error('Engine did not answer.')); }
+      const chunks = []; let bytes = 0;
+      res.on('data', (chunk) => {
+        bytes += chunk.length;
+        if (bytes > 65536) { res.destroy(new Error('Engine response is too large.')); return; }
+        chunks.push(chunk);
+      });
+      res.on('error', reject);
+      res.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (err) { reject(err); } });
+    });
+    const timer = setTimeout(() => req.destroy(new Error('Engine timed out.')), 4000);
+    req.on('error', reject);
+    req.on('close', () => clearTimeout(timer));
+  });
+}
 
 /** The nights of a stay the engine says are taken, or null when it can't say. */
 export async function engineBooked(template, stay) {
@@ -34,28 +75,35 @@ export async function engineBooked(template, stay) {
   if (!nights.length) return [];
   const values = { checkin: stay.checkin, checkout: stay.checkout, guests: String(stay.guests ?? ''), nights: String(nights.length) };
   const url = template.trim().replace(/\{(checkin|checkout|guests|nights)\}/g, (_, k) => encodeURIComponent(values[k]));
-  if (url.startsWith('/api/demo-engine/')) return demoBooked(new URL(url, 'http://demo').searchParams);
+  if (url.startsWith('/api/demo-engine/')) return process.env.NODE_ENV !== 'production' || process.env.DEMO_ENGINE === '1'
+    ? demoBooked(new URL(url, 'http://demo').searchParams) : null;
 
   let u;
   try { u = new URL(url); } catch { return null; }
   const dev = process.env.NODE_ENV !== 'production';
-  if (!(u.protocol === 'https:' || (dev && u.protocol === 'http:')) || (!dev && PRIVATE_HOST.test(u.hostname))) return null;
-  const hit = cache.get(url);
-  if (hit && Date.now() - hit.at < 60000) return hit.booked;
-  try {
-    const r = await fetch(u, { signal: AbortSignal.timeout(4000), redirect: 'error', headers: { accept: 'application/json' } });
-    if (!r.ok) return null;
-    const body = await r.text();
-    if (body.length > 65536) return null;
-    const j = JSON.parse(body);
-    const booked = j?.available === false ? nights
-      : Array.isArray(j?.booked) ? j.booked.filter((d) => typeof d === 'string' && nights.includes(d)) : null;
-    if (booked) {
-      if (cache.size > 500) cache.clear();
-      cache.set(url, { at: Date.now(), booked });
-    }
-    return booked;
-  } catch {
-    return null;
+  if (!(u.protocol === 'https:' || (dev && u.protocol === 'http:')) || u.username || u.password) return null;
+  if (!dev) {
+    const hosts = (process.env.ENGINE_ALLOWED_HOSTS || '').split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
+    if (!hosts.includes(u.hostname.toLowerCase()) || u.port && u.port !== '443') return null;
+    if (isIP(u.hostname.replace(/^\[|\]$/g,'')) && !publicAddress(u.hostname.replace(/^\[|\]$/g,''))) return null;
   }
+  const hit = cache.get(url);
+  if (hit && Date.now() - hit.at < (hit.booked === null ? 10000 : 60000)) return hit.booked;
+  if (pending.has(url)) return pending.get(url);
+  if (active >= 4) return null;
+  active++;
+  const run = (async () => {
+   let booked = null;
+   try {
+    const j = await readEngine(u, !dev);
+    booked = j?.available === false ? nights
+      : Array.isArray(j?.booked) ? j.booked.filter((d) => typeof d === 'string' && nights.includes(d)) : null;
+   } catch { /* Unknown availability: the external engine has the final word. */ }
+   finally { active--; pending.delete(url); }
+   if (cache.size >= 500) cache.clear();
+   cache.set(url, { at: Date.now(), booked });
+   return booked;
+  })();
+  pending.set(url, run);
+  return run;
 }

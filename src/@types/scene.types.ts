@@ -168,6 +168,7 @@ export interface Collider {
 export interface SceneLook { brightness: number; contrast: number; saturation: number }
 
 export interface SceneDoc {
+  revision?: number;
   id: string;
   version: 2;
   propertyId: string | null;

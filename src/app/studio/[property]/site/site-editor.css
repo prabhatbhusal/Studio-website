@@ -148,6 +148,37 @@
 .rs-notes { margin: 6px 0 0; font-style: italic; }
 .rs-stay { margin: 4px 0 0; font-weight: 600; }
 .rs-kinds { display: flex; gap: 6px; margin-left: auto; }
+.rs-manual-block summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+.se .rs-review { width: min(920px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); overflow: auto; background: var(--ed-panel); color: var(--ed-text); border: 1px solid var(--ed-line-lit); border-radius: 12px; padding: 24px; }
+.rs-review::backdrop { background: rgb(0 0 0 / 65%); }
+.rs-review-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.rs-review-head h2 { margin: 0; }
+.rs-review-head p { overflow-wrap: anywhere; }
+.rs-review-plan { position: relative; margin: 16px 0; overflow: hidden; border: 1px solid var(--ed-line); }
+.rs-review-plan img { display: block; width: 100%; height: auto; }
+.rs-plan-pin { position: absolute; transform: translate(-50%, -50%); max-width: 150px; padding: 4px 6px; background: var(--ed-panel); color: var(--ed-text); border: 1px solid var(--ed-text-dim); border-radius: 4px; font-size: 11px; overflow-wrap: anywhere; }
+.rs-plan-pin.is-selected { background: var(--ed-signal); color: var(--ed-signal-ink); border: 2px solid var(--ed-signal-ink); font-weight: 600; }
+.rs-plan-pin.is-taken { border-style: dashed; }
+.rs-review-decision { display: flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--ed-line); margin-top: 16px; padding-top: 16px; }
+.rs-review-decision p { flex-basis: 100%; }
+.rs-review-availability { font-weight: 600; }
+.rs-review-availability.is-unavailable { color: var(--ed-danger); }
+@media (max-width: 480px) { .se .rs-review { padding: 16px; } }
+.rs-filter-bar, .rs-calendar-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.rs-calendar-bar h2 { margin: 0; }
+.rs-calendar-bar > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.rs-date-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.rs-calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.rs-weekday { text-align: center; color: var(--ed-text-dim); padding: 8px 0; font-size: 12px; }
+.se button.rs-calendar-day { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 68px; padding: 8px; min-width: 0; }
+.rs-calendar-day strong { align-self: flex-end; font-weight: 600; }
+.se .rs-calendar-day.is-today { border-color: var(--ed-signal); }
+.se .rs-calendar-day[aria-pressed="true"] { background: var(--ed-signal); color: var(--ed-signal-ink); }
+.rs-who { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+  .rs-date-filters { grid-template-columns: 1fr; }
+  .se button.rs-calendar-day { padding: 5px; min-height: 60px; }
+}
 .se .rs-kinds button.is-on { border-color: var(--ed-signal); color: var(--ed-signal); background: transparent; }
 .se .se-pin { border-radius: 999px 999px 999px 3px; }
 .rs-act { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }

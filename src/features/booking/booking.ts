@@ -29,7 +29,8 @@ export function isoDay(days = 0, from = new Date()): string {
 export function venueDay(days = 0, timeZone = 'Asia/Kathmandu', from = new Date()): string {
   let ymd: string;
   try {
-    ymd = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(from);
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(from);
+    ymd = ['year', 'month', 'day'].map((key) => parts.find((p) => p.type === key)!.value).join('-');
   } catch {
     ymd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kathmandu', year: 'numeric', month: '2-digit', day: '2-digit' }).format(from);
   }

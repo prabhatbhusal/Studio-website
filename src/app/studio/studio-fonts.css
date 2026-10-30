@@ -1,0 +1,9 @@
+/* The font variable is available to studio chrome only. Client-site and tour
+   previews keep their public typography, even when opened inside /studio. */
+.studio-fonts { display: contents; }
+.studio-fonts :is(.ed2, .ed2-boot, .rp) {
+  --font-ui: var(--font-studio);
+  --sans: var(--font-studio), Arial, sans-serif;
+  --mono: var(--sans);
+  font-family: var(--sans);
+}

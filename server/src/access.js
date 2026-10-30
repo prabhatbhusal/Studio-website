@@ -9,6 +9,9 @@
 import { getProperty, getScene, listScenes, propertyIsVisible } from './store.js';
 import { getUserById } from './usersStore.js';
 import { readSession } from './middleware/auth.js';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { DATA_DIR } from './dataDir.js';
 
 /** The session's role read fresh from the account, not the JWT claim, so a
  *  promotion or demotion applies at once. The legacy passwordless session
@@ -43,11 +46,19 @@ export async function mayWorkOnScene(session, sceneId, intoPropertyId) {
  *  ponytail: reads every space to find its users; fine at tens of spaces,
  *  index asset -> space when there are hundreds. */
 export async function mayWorkOnAsset(session, assetId) {
+  let used = false;
   for (const { id } of await listScenes()) {
     const doc = await getScene(id).catch(() => null);
-    if (doc && JSON.stringify(doc).includes(assetId) && !(await spaceAllows(session, doc.propertyId, doc.ownerId ?? null))) return false;
+    if (doc && JSON.stringify(doc).includes(assetId)) {
+      used = true;
+      if (!(await spaceAllows(session, doc.propertyId, doc.ownerId ?? null))) return false;
+    }
   }
-  return true;
+  if (used || !session?.sub) return true;
+  try {
+    const record = JSON.parse(await fs.readFile(path.join(DATA_DIR, 'upload-owners', `${assetId}.json`), 'utf8'));
+    return record.owner === session.sub;
+  } catch (err) { if (err.code === 'ENOENT') return false; throw err; }
 }
 
 /** The spaces a session may see in the studio's lists. */

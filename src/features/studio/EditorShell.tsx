@@ -31,6 +31,7 @@ import type { PublishState, EmbedSettings, SceneVersion } from '../../lib/api';
 import { HotspotMarkers } from '../hotspots/HotspotMarkers';
 import { ShortcutSheet } from './ShortcutSheet';
 import { QrCode } from './QrCode';
+import { DraftRecovery } from './RecoveryPanel';
 
 /** Where a link will be shared: each gets its own ?src=, so the monthly report
  *  shows which brought each visit and enquiry (api.ts visitSource). */
@@ -182,6 +183,7 @@ export function EditorShell({ state, property, onPreview }: {
       )}
 
       <div className="ed2-inspector">
+        <DraftRecovery key={state.activeId} sceneId={state.activeId} />
         {sel && (
           <div className="ed2-row">
             <button onClick={() => setSel(null)} title="Esc">← Back to scene</button>
@@ -440,8 +442,8 @@ function PublishPanel({ sceneId, onClose }: { sceneId: string; onClose: () => vo
     if (hasUnsavedChanges(sceneId)) {
       await loadSceneDoc(sceneId);
       const sent = sceneDocFor(sceneId);
-      await saveScene(sceneId, sent);
-      markSaved(sceneId, sent);
+      const saved = await saveScene(sceneId, sent);
+      if (saved) markSaved(sceneId, saved);
     }
     const r = await publishSceneNow(sceneId);
     if (!r.published) throw new Error(r.blockers?.join(' ') || 'Publish was refused.');
@@ -1053,8 +1055,8 @@ function CopyToSpaces({ sceneId, propertyId, onClose }: { sceneId: string; prope
         const newTr = tracks.filter((t) => pickTr.has(t.id)).map((t) => ({ ...structuredClone(t), id: `${t.id}-${target}-${Date.now().toString(36)}` }));
         if (newTr.length) loadTracks(target, [...sceneDocFor(target).tracks, ...newTr], { replace: true });
         const sent = sceneDocFor(target);
-        await saveScene(target, sent);
-        markSaved(target, sent);
+        const saved = await saveScene(target, sent);
+        if (saved) markSaved(target, saved);
         n += 1;
       }
       setDone(`Copied into ${n} space${n === 1 ? '' : 's'} and saved their drafts. Open each to check the spots, then publish.`);
@@ -1128,8 +1130,8 @@ function SaveToServerButton({ sceneId }: { sceneId: string }) {
       // studio doesn't edit (uploaded variants, transform, status).
       await loadSceneDoc(sceneId);
       const sent = sceneDocFor(sceneId);
-      await saveScene(sceneId, sent);
-      markSaved(sceneId, sent);
+      const saved = await saveScene(sceneId, sent);
+      if (saved) markSaved(sceneId, saved);
       const n = (k: number, one: string) => `${k} ${one}${k === 1 ? '' : 's'}`;
       setLastSaved({
         at: new Date(),

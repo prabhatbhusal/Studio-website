@@ -1,0 +1,964 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 13 /Kids [6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 22 0 R 24 0 R 26 0 R 28 0 R 30 0 R] >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Length 5913 >>
+stream
+0.12 0.18 0.25 rg
+BT /F2 13 Tf 44 797 Td (RCAAS platform | VPS readiness audit) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (Report date: 29 October 2026 \(Asia/Katmandu\). Source revision: 239a3f1. Local repository review;) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td (no deployment or application fixes were performed.) Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td () Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td (Recommendation: address the high-priority findings before public launch. The application builds) Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (and its existing tests pass, but that does not establish production readiness.) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td () Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (30 findings: 13 high, 16 medium, 1 low. Fifteen defects were reproduced in isolated local checks.) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (Remaining items are clearly labeled source-confirmed risks, gaps, or a dependency advisory. No) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (critical public remote takeover was demonstrated.) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td () Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (This is a broad, risk-based code and configuration audit, not a guarantee that every bug has been) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (found. It does not certify security, uptime or legal compliance.) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td () Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (Application files and real customer data were left unchanged. New files are audit artifacts only;) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (the build regenerated ignored build output. No credentials, account records or customer) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (attachments are included.) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td () Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td () Tj ET
+BT /F2 13 Tf 44 571.0000000000009 Td (Scope, evidence and limitations) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td () Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td (Indexed 286 source/test/script files \(source-inventory.txt\). Focused manual review: all API route) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td (families; authentication/access control; stores and persistence; local/S3 assets; booking rules) Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td (and status flows; attachment handling; backup/deployment; frontend API and tour loading; booking) Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td (form dates; metadata and CI. This is not a claim of line-by-line review of every component.) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (Existing checks: 27 client tests passed; 149 of 150 server tests passed, with one skipped; total) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td (176 passing and one skipped. TypeScript noEmit completed successfully. ESLint: zero errors, six) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (warnings \(five img optimization warnings and one effect dependency warning\). The warnings are not) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (counted as confirmed bugs.) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (Production build: npm run build with NEXT_DIST_DIR=.next-new passed. The first sandboxed attempt) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (failed fetching Google Fonts; the network-enabled retry passed. Build-time internet access to) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (font providers is therefore a deployment dependency. Build used local default URL settings, not a) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (validated VPS environment.) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td () Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (Tool versions: Node 24.13.0, npm 11.21.1, built Next 16.4.3. npm registry audit: frontend zero) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (advisories, server one moderate advisory. Registry results are a time-specific snapshot and do) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td (not analyze custom or vendored code.) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td () Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (New checks: node vps-audit/reproduce.mjs, 15 confirmations; see reproductions.log. Checks use) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td (scratch data under this folder, loopback HTTP and mocks, with email/provider keys absent. They) Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td (delete scratch data afterward.) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td () Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td (Not verified: real PostgreSQL execution \(the database-dependent suite is skipped\), real R2) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td (provider behavior, actual VPS Linux/nginx/TLS/firewall/systemd/PM2 configuration, production) Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (secrets, DNS, email domain verification/delivery, real hotel integrations, full rendered-page) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td (crawl, real GPU/mobile performance, accessibility screen-reader behavior, backups restored onto a) Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (separate machine, or sustained load/penetration testing. Minified vendor SDK internals were not) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td (manually audited.) Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td () Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (Existing qa-bug-hunt report was rechecked: its Nepal date issue, outlet decline-email fragment,) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (missing email subject space and waitlist status wording are fixed in current source; they are not) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td (repeated as open bugs. A28 describes a narrower remaining multi-timezone issue.) Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td () Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 1 / 13) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 6286 >>
+stream
+0.12 0.18 0.25 rg
+BT /F2 13 Tf 44 797 Td (Priority order and reading guide) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (P0 before launch: A01 accountless admin, A02 upload authorization, A03 publish lifecycle, A04) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td (restored ownership, A05/A09 fail-closed storage, A06 credential concurrency. These have local) Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (reproductions.) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td () Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (P1 before accepting real bookings: A15 unify or explicitly disable duplicate channels; A16) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (enforce one API process; A17 resolve lost writes; A18 upload quotas; A23 complete restore plan;) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (A24 production deployment configuration. Update A26 dependency and protect attachments A27.) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td () Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (P2 hardening and polish: range behavior, strict calendar dates, bounded engine calls, attachment) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (retry, async error forwarding, timezone configuration, large-project loading and content) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (completion.) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td () Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (Each finding contains an exact current file/line reference, impact and prerequisites, evidence) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (level, recommended repair and acceptance check. Source-confirmed risk means the risky) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (implementation is visible, but the full outage/exploitation scenario was not executed.) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td () Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (A01 is a deliberate legacy path with an unsafe consequence for the newer permission model. A15) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td (depends on enabling two channels for one physical resource. A16 depends on multiple API) Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td (processes. A23 depends on PostgreSQL and/or an external ASSET_DIR. These conditions matter when) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td (prioritizing.) Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td () Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F2 13 Tf 44 525.8000000000011 Td (A01 | High | The shared signup code also grants unrestricted administrator) Tj ET
+BT /F2 13 Tf 44 514.5000000000011 Td (access) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td () Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (Location: server/src/routes/auth.js:74; server/src/middleware/auth.js:27; server/src/store.js:376) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td () Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td (Impact / trigger: Anyone given the team access code to create an editor account can instead log) Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (in without an email and obtain access across projects and admin operations. Removing their) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (account or resetting its password does not revoke this accountless session.) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td () Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (Evidence: reproduce.mjs A01: POST /auth/login with the team code returned an admin JWT without) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (sub. The normal signup path uses that same EDITOR_PASSWORD. This is a legacy compatibility path,) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (but it defeats the current account roles.) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td () Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td (Recommended fix: Disable accountless login in production; use separate, revocable invitations for) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (signup. Require a real current account for every admin and project action. Rotate SESSION_SECRET) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (after retiring legacy sessions.) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td () Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td (Acceptance check: The signup code alone must never authenticate as admin; deleted or demoted) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td (accounts and old legacy cookies must fail authorization.) Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td () Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F2 13 Tf 44 265.9000000000009 Td (A02 | High | Staff can write into any known or invented upload staging ID) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td () Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td () Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (Location: server/src/routes/assets.js:90; server/src/routes/assets.js:106;) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (server/src/access.js:45) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td () Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td (Impact / trigger: The limited staff role can write files despite being barred from creating) Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (uploads. Any signed-in user knowing another staging ID can interfere with it. Staging IDs have no) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (stored owner; unreferenced assets also lack ownership checks.) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td () Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td (Evidence: A02 used a staff account to PUT a chunk to ast_other_upload without creating an upload;) Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (HTTP 200 and the bytes were written. Init and chunk routes lack assetGuard/refuseStaff. Finalize) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (is guarded but cannot undo the staging modification.) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td () Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (Recommended fix: Persist upload owner and state on creation; authorize init, chunk, finalize and) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (cleanup against that owner. Refuse staff before reading upload bodies; reject unknown IDs. Give) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 2 / 13) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 5694 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td (stored assets explicit ownership.) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (Acceptance check: Staff writes return 403; a second editor cannot initialize, resume, finalize or) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td (delete another editor's unused upload.) Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td () Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td () Tj ET
+BT /F2 13 Tf 44 729.2000000000003 Td (A03 | High | Unpublish then publish cannot restore a scene to live) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td () Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td () Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (Location: server/src/store.js:197; server/src/store.js:212) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td () Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (Impact / trigger: A routinely unpublished tour cannot be published again through the normal) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (publish flow. The request fails while the scene remains offline.) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td () Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (Evidence: A03: publish created @1, unpublish removed publishedVersion from the draft, and) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (republish tried immutable @1 again and threw EEXIST. The same collision follows any published) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (version because numbering restarts at 1.) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td () Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td (Recommended fix: Keep a monotonic lastVersion counter independent of live status, or allocate) Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td (from the highest historical version under a lock. Preserve immutable snapshots.) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td () Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td (Acceptance check: Publish/unpublish/publish repeatedly; every attempt succeeds with a new) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td (increasing version, including after restoring older snapshots.) Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td () Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td () Tj ET
+BT /F2 13 Tf 44 503.2000000000011 Td (A04 | High | Version restore rolls back scene ownership) Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td () Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td () Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (Location: server/src/store.js:253; server/src/store.js:259) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (Impact / trigger: Restoring history after a scene moves out of a shared project can transfer) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (ownership to an earlier owner or null. The person restoring it can lose access, and the old owner) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (may regain access.) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td () Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (Evidence: A04 published as owner-a, detached the scene as owner-b, then restored version 1:) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (ownerId changed back to owner-a. Restore protects propertyId but does not preserve current) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (ownerId.) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td () Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (Recommended fix: Preserve ownership and all authorization metadata from the current draft during) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (restore; restore only editable scene content.) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td () Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td (Acceptance check: Restore a snapshot after transfer/detach/delete-project flows and assert) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td (current ownerId and permissions remain unchanged.) Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td () Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F2 13 Tf 44 265.9000000000009 Td (A05 | High | Booking read failures become empty inventory and can destroy) Tj ET
+BT /F2 13 Tf 44 254.60000000000088 Td (records) Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td () Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td () Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (Location: server/src/reservations.js:25; server/src/reservations.js:33) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td () Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td (Impact / trigger: A corrupt reservation file or filesystem read error makes all inventory appear) Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (available. The next mutation can replace existing booking data with a new partial list, causing) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (data loss and double bookings.) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td () Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td (Evidence: A05 wrote malformed JSON, readReservations returned [], then withReservations overwrote) Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (the damaged file with only a new record. The catch handles every error as an empty store.) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td () Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td (Recommended fix: Treat only ENOENT as empty. Fail closed for invalid JSON, permission and disk) Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (failures; quarantine damaged files, alert operators, and restore from backup before accepting) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (bookings.) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 3 / 13) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Length 5841 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td () Tj ET
+BT /F1 10 Tf 44 785.7 Td (Acceptance check: Malformed JSON and simulated read failures must return a controlled service) Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (error and leave the original file intact.) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td () Tj ET
+BT /F2 13 Tf 44 740.5000000000002 Td (A06 | High | One-time reset links can be redeemed twice concurrently in file) Tj ET
+BT /F2 13 Tf 44 729.2000000000003 Td (mode) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td () Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td () Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (Location: server/src/usersStore-file.js:164; server/src/usersStore-file.js:168) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td () Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (Impact / trigger: Two requests with the same reset link both succeed and race to choose the) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (account password. File-backed role/password/reset updates can also overwrite each other because) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (whole-file atomic writes do not serialize read-modify-write operations.) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td () Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (Evidence: A06 called resetPassword twice through Promise.all with one token; both returned a) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (user. The PostgreSQL implementation uses a conditional UPDATE and is stronger for this specific) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (operation.) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td () Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td (Recommended fix: Serialize all mutations per account, re-read and consume the token inside the) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td (lock; preferably use transactional database updates. Never allow a stale role write to revive old) Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td (credentials.) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td (Acceptance check: Concurrent redemption has exactly one success. Concurrent password reset and) Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td (role change preserve both the new password and intended role.) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td () Tj ET
+BT /F2 13 Tf 44 480.6000000000011 Td (A07 | Medium | Concurrent first signups both become administrators) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td () Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (Location: server/src/usersStore-file.js:106; server/src/usersStore-pg.js:56) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td () Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (Impact / trigger: During first deployment, two people using the team code can both receive the) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (initial administrator role. The first-account bootstrap is not serialized.) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td () Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (Evidence: A07 created two users concurrently in an empty file store; both became admin.) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (PostgreSQL has a similar check-then-insert condition; that database path was inspected, not) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td (executed.) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td () Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (Recommended fix: Bootstrap the first admin explicitly through an operator command, or protect) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td (initialization with a global transaction/advisory lock and an invariant.) Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td () Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td (Acceptance check: Concurrent initial registration creates at most one admin; staff invitation) Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td (must never unexpectedly become admin.) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td () Tj ET
+BT /F2 13 Tf 44 254.60000000000088 Td (A08 | Medium | Public enquiries accept nonexistent or unpublished scene) Tj ET
+BT /F2 13 Tf 44 243.30000000000086 Td (references) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td () Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td () Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (Location: server/src/routes/leads.js:63; server/src/routes/leads.js:71) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td () Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (Impact / trigger: Invalid scene requests are saved and may trigger default-team email. This) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (creates orphan leads and lets public callers submit against draft scene IDs. Valid published) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td (scenes moved between projects are routed using their current draft association.) Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td () Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (Evidence: A08 posted a valid guest form with not-a-real-space and received a persisted lead ID.) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (Lookup uses getScene rather than getPublishedScene and does not reject an unresolved scene.) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td () Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (Recommended fix: Require a valid published scene or a valid public project entry point, derive) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (project and scene labels from that public state, and reject unknown IDs before storage/email.) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 4 / 13) Tj ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 11 0 R >>
+endobj
+13 0 obj
+<< /Length 5349 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td () Tj ET
+BT /F1 10 Tf 44 785.7 Td (Acceptance check: Unknown/draft scenes cannot create leads; published tours route enquiries to) Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (the project shown to visitors.) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td () Tj ET
+BT /F2 13 Tf 44 740.5000000000002 Td (A09 | High | Corrupt website state is silently treated as a new website) Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td () Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td () Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (Location: server/src/routes/sites.js:51; server/src/routes/sites.js:355) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td () Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (Impact / trigger: A read failure returns null, so a subsequent draft save writes a new object and) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (discards the prior publication, schedule and review state. The live site may disappear without a) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (recoverable API error.) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td () Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (Evidence: A09 wrote invalid JSON and readSite returned null. The draft route uses \(await) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (readSite\(...\)\) ?? {} before overwriting the file.) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td () Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (Recommended fix: Only ENOENT means no site. Propagate corruption and disk errors; refuse) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td (mutations until recovery and retain backups.) Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td () Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td (Acceptance check: Invalid JSON yields a controlled error and a draft save cannot replace the) Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td (damaged state.) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td () Tj ET
+BT /F2 13 Tf 44 514.5000000000011 Td (A10 | Medium | External availability response size is checked after full) Tj ET
+BT /F2 13 Tf 44 503.2000000000011 Td (buffering) Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td () Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td () Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (Location: server/src/engine.js:48) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (Impact / trigger: An engine endpoint can make the VPS allocate a large response despite the) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (intended 64 KB limit. Public room-availability requests can invoke this path concurrently.) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td () Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (Evidence: A10 supplied a mocked oversized response and proved text\(\) completed before rejection.) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (Code sets a timeout but does not cap streamed response bytes.) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td () Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (Recommended fix: Read a bounded stream, stop and cancel once the byte limit is reached; also) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td (enforce concurrency limits and a short timeout.) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td () Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (Acceptance check: A response over the cap is aborted before full consumption and peak memory) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td (stays bounded under simultaneous requests.) Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td () Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td () Tj ET
+BT /F2 13 Tf 44 288.5000000000009 Td (A11 | Medium | Suffix byte ranges return incorrect file content) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td () Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (Location: server/src/routes/assets.js:518) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td () Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (Impact / trigger: Media clients asking for bytes from the end receive the beginning instead,) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (which can break MP4 metadata probing, seeking and other streaming clients.) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td () Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td (Evidence: A11: a 10-byte file containing 0123456789 returned 0123 for Range: bytes=-3. It should) Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (return 789 with Content-Range bytes 7-9/10.) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td () Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td (Recommended fix: Implement suffix-length semantics and reject empty/invalid ranges; preferably) Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td (use an established range parser.) Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td () Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (Acceptance check: Verify bytes=-3, bytes=-100, bytes=3-, bytes=-0, zero-length files and large) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td (integer boundaries.) Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td () Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 5 / 13) Tj ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 13 0 R >>
+endobj
+15 0 obj
+<< /Length 5096 >>
+stream
+0.12 0.18 0.25 rg
+BT /F2 13 Tf 44 797 Td (A12 | Medium | Byte ranges extending past EOF are rejected unnecessarily) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (Location: server/src/routes/assets.js:520) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td () Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (Impact / trigger: A valid request beginning inside a file but ending past EOF gets 416, creating) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (avoidable media/download failures.) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td () Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (Evidence: A12: Range bytes=0-99 against a 10-byte file returned 416. A satisfiable range should) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (clamp the end and serve bytes 0-9.) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td () Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (Recommended fix: Clamp the end to bytes-1 when the start is valid; return 416 when no byte is) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (satisfiable.) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td () Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (Acceptance check: Check bytes=0-99 returns the complete 10-byte file as 206, while bytes=10-99) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (returns 416.) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td () Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td () Tj ET
+BT /F2 13 Tf 44 582.3000000000009 Td (A13 | Medium | Booking dates are validated by shape rather than calendar) Tj ET
+BT /F2 13 Tf 44 571.0000000000009 Td (validity) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td () Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td (Location: server/src/events.js:45; server/src/stays.js:69; server/src/routes/reservations.js:406) Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td () Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td (Impact / trigger: Impossible dates can enter event bookings. Some room dates normalize) Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (inconsistently or cause addDays/toISOString failures and 500 responses.) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td () Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (Evidence: A13 eventProblem accepted 2026-11-31 with otherwise valid inputs. Regex YYYY-MM-DD) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (alone cannot establish that the day exists.) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (Recommended fix: Use one strict calendar-date parser shared across server entry points; reject) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (unless parsing and formatting round-trip exactly. Apply it to availability and staff marks too.) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td () Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (Acceptance check: Reject November 31, February 30, month 00/13 and day 00; accept valid leap days) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (and enforce date windows.) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td () Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td () Tj ET
+BT /F2 13 Tf 44 356.300000000001 Td (A14 | Medium | One bad scene can break the entire studio scene list) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td () Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td () Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td (Location: server/src/store.js:44; server/src/leadsStore.js:52; server/src/usersStore-file.js:50) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td () Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td (Impact / trigger: Listings parse every JSON file with Promise.all. A single malformed file fails) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td (the whole list; the account scan can similarly disrupt authentication for unrelated users.) Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td () Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td (Evidence: A14 inserted one broken scene alongside a healthy scene and listScenes rejected with) Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (SyntaxError. Leads and file accounts have the same global parsing pattern, confirmed by) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td (inspection.) Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td () Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (Recommended fix: Validate on write, isolate/quarantine individual damaged records during reads,) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (report degraded health, and avoid exposing data outside the caller's scope while recovering.) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td () Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (Acceptance check: One bad record is detected and alerted without taking unrelated accounts,) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (projects or public listings offline.) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td () Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 6 / 13) Tj ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 15 0 R >>
+endobj
+17 0 obj
+<< /Length 5944 >>
+stream
+0.12 0.18 0.25 rg
+BT /F2 13 Tf 44 797 Td (A15 | High | Website and hotspot bookings do not share room/hall inventory) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (Evidence level: Reproduced) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (Location: server/src/events.js:22; server/src/events.js:29; server/src/stays.js:26;) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td (server/src/stays.js:38) Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td () Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (Impact / trigger: If a venue enables both booking channels for the same physical space, both can) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (accept overlapping confirmed bookings. This is conditional on configuring both channels;) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (embed-first operations can avoid the trigger.) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td () Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (Evidence: A15 supplied a confirmed website hall booking; hallHotspotFree still returned true.) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (Hall inventory filters different kinds. Website rooms and room hotspots likewise use separate) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (identifiers and record kinds.) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td () Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (Recommended fix: Give each physical resource one inventory identifier across channels and) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (centralize locking/availability. Until implemented, enforce one booking channel for a resource in) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (configuration.) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td () Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td (Acceptance check: Booking through either channel blocks overlapping requests/confirmations/marks) Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td (through the other.) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td () Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td () Tj ET
+BT /F2 13 Tf 44 537.100000000001 Td (A16 | High | Multiple API processes bypass in-memory booking locks) Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td () Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (Location: server/src/reservations.js:29; server/src/stats.js:52; server/src/rateLimit.js:10) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td () Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (Impact / trigger: PM2 cluster mode, overlapping deploys or two API instances can both read the) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (last available room/table and overwrite reservations. Rate limits multiply with each process and) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td (reset on restart. PostgreSQL accounts do not migrate booking storage.) Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td () Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (Evidence: Booking/stat queues and rate-limit counters are process-local Maps; all instances still) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (write shared JSON files. No multi-process stress run was performed.) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td () Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (Recommended fix: Launch with exactly one API process until inventory uses database) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (transactions/shared locks. Use shared rate limits when scaling; prevent old/new API overlap) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (during deploy.) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td () Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (Acceptance check: Run a two-process last-table contention test after the storage fix; exactly one) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (reservation succeeds and no records disappear.) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td () Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td () Tj ET
+BT /F2 13 Tf 44 299.8000000000009 Td (A17 | High | Concurrent project/scene/site updates can lose edits and) Tj ET
+BT /F2 13 Tf 44 288.5000000000009 Td (permission changes) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td () Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (Location: server/src/store.js:385; server/src/store.js:104; server/src/routes/sites.js:412) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td () Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (Impact / trigger: Atomic file replacement prevents torn JSON but not lost updates. Two editors) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (can overwrite each other; a draft save can race a publish/scheduled publish, and two claims can) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (both appear successful.) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td () Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (Evidence: These operations read current objects, change them, and write with no shared per-record) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (lock or revision check. publishDue explicitly shares the site file with draft and review) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td (operations.) Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td () Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (Recommended fix: Add serialization and optimistic revision checks for every mutable entity,) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (returning 409 on stale saves; use transactions for multi-file operations and ownership claims.) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td () Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (Acceptance check: Race publish/save, membership changes, claims and scheduled publish; all) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (intended updates survive or receive explicit conflicts.) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 7 / 13) Tj ET
+endstream
+endobj
+18 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 17 0 R >>
+endobj
+19 0 obj
+<< /Length 5786 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td () Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F2 13 Tf 44 774.4000000000001 Td (A18 | High | Uploads have no total quota, expiry or ZIP expansion budget) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td () Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (Location: server/src/routes/assets.js:41; server/src/routes/assets.js:155) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td () Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (Impact / trigger: An authorized account can fill VPS disk by sending many individually permitted) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (chunks or a highly compressed ZIP. Abandoned staging data has no automatic retention policy. Disk) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (exhaustion affects every tenant.) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td () Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (Evidence: Only per-chunk limits are present. ZIP extraction writes entries without total) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (uncompressed bytes/file-count/depth limits. No staging janitor was found. No destructive) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (disk-fill experiment was run.) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td () Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (Recommended fix: Set per-upload and account quotas, extracted-byte/file/depth limits, free-space) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (thresholds, and expired-upload cleanup. Enforce budgets while streaming, including during ZIP) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (expansion.) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td () Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td (Acceptance check: Small-budget tests stop oversized uploads safely, remove partial extraction,) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td (and leave capacity for normal bookings.) Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td () Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F2 13 Tf 44 525.8000000000011 Td (A19 | Medium | Concurrent chunks can overwrite each other after the offset) Tj ET
+BT /F2 13 Tf 44 514.5000000000011 Td (check) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td () Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (Location: server/src/routes/assets.js:121; server/src/routes/assets.js:130) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td () Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td (Impact / trigger: Duplicate/retried or overlapping requests can both see the same current offset) Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (and write to the same file. An offset-0 writer may truncate another writer's data.) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td () Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (Evidence: The stat/offset check and createWriteStream are separate awaits with no per-file lock;) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (the successful response reports the requested byte count rather than a protected committed state.) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td () Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (Recommended fix: Serialize chunk mutations per upload/file, atomically enforce expected offsets,) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (and prevent finalize from running while writes are in progress.) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td () Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (Acceptance check: Two same-offset chunks produce one accepted write and one conflict; finalize) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (cannot race an unfinished chunk.) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td () Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td () Tj ET
+BT /F2 13 Tf 44 299.8000000000009 Td (A20 | Medium | Engine URL filtering does not prevent DNS-based private) Tj ET
+BT /F2 13 Tf 44 288.5000000000009 Td (network access) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td () Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (Location: server/src/engine.js:28; server/src/engine.js:46) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td () Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (Impact / trigger: A studio author who configures an HTTPS hostname resolving to a private address) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (can make the VPS contact internal services. This requires author control over availabilityUrl; it) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (is not direct visitor URL input.) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td () Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (Evidence: The filter checks the hostname string rather than resolved addresses. The source itself) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (notes this gap. Redirects are correctly refused. No internal services were contacted in this) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td (review.) Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td () Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (Recommended fix: Allowlist vetted engine hosts, or validate and pin all resolved IPv4/IPv6) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (addresses and enforce egress restrictions. Apply equivalent checks to every network hop.) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td () Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (Acceptance check: A controlled hostname resolving to loopback/private/link-local addresses is) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (refused without initiating the connection.) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 8 / 13) Tj ET
+endstream
+endobj
+20 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 19 0 R >>
+endobj
+21 0 obj
+<< /Length 5869 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td () Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F2 13 Tf 44 774.4000000000001 Td (A21 | Medium | Public room availability can trigger uncapped engine requests) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td () Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (Location: server/src/routes/reservations.js:395; server/src/engine.js:26) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td () Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (Impact / trigger: Changing date/guest combinations defeats the per-URL one-minute cache. Public) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (traffic can create many simultaneous external requests and consume VPS and provider resources.) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td () Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (Evidence: The room availability GET route has no rateLimiter check or shared concurrency cap; the) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (booking submission route is separately rate limited. Bad engine responses are not cached.) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td () Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (Recommended fix: Rate limit availability reads, validate a bounded date/guest window, deduplicate) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (in-flight engine calls, cap per-project concurrency and add failure caching/circuit breaking.) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td () Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (Acceptance check: A local fake engine sees bounded requests under a flood of varied dates;) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (healthy callers still receive timely responses.) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td () Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td () Tj ET
+BT /F2 13 Tf 44 559.700000000001 Td (A22 | Medium | Attachment upload consumes its one-time key before saving the) Tj ET
+BT /F2 13 Tf 44 548.400000000001 Td (file) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td () Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td (Location: server/src/routes/reservations.js:660; server/src/routes/reservations.js:667) Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td () Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td (Impact / trigger: If mkdir or file writing fails after reservation metadata commits, the upload) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (key is gone and the reservation claims an attachment that cannot be downloaded. The guest cannot) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (retry normally.) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (Evidence: The reservation queue saves attachment metadata and deletes the key before filesystem) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (writes begin. This ordering is visible in the route; disk failure was not injected.) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td () Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (Recommended fix: Stage the attachment first and commit metadata/key consumption only after) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (durable storage succeeds, with rollback/cleanup and retry-safe operation IDs.) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td () Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (Acceptance check: Inject a storage failure: the guest can retry with the original key and the) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td (inbox does not show a nonexistent attachment.) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td () Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td () Tj ET
+BT /F2 13 Tf 44 322.40000000000094 Td (A23 | High | The backup command does not back up PostgreSQL accounts or) Tj ET
+BT /F2 13 Tf 44 311.10000000000093 Td (external local assets) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td () Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td (Evidence level: Source-confirmed gap) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (Location: server/scripts/backup-data.js:31; server/src/usersStore.js:7; server/src/storage.js:28) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td () Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (Impact / trigger: After switching accounts to PostgreSQL, restoring this archive does not restore) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td (users, password hashes or reset state. An ASSET_DIR outside DATA_DIR is also excluded in) Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (local-driver mode.) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td () Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (Evidence: The backup script archives only DATA_DIR and optionally uploads that archive to S3. It) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td (never dumps PostgreSQL or separately archives ASSET_DIR. This is conditional on those deployment) Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (settings.) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td () Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td (Recommended fix: Add tested PostgreSQL backups/PITR and a separate asset backup policy. Keep) Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td (off-VPS copies, encrypt/restrict them, and document a complete restore including) Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (credentials/config held in an appropriate secret store.) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td () Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td (Acceptance check: Restore into an empty machine/database; confirm accounts, permissions, booking) Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (history, attachments, scene JSON and every scan all work.) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td () Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 9 / 13) Tj ET
+endstream
+endobj
+22 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 21 0 R >>
+endobj
+23 0 obj
+<< /Length 6083 >>
+stream
+0.12 0.18 0.25 rg
+BT /F2 13 Tf 44 797 Td (A24 | High | VPS deployment files are absent and production defaults are) Tj ET
+BT /F2 13 Tf 44 785.7 Td (permissive) Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td () Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td (Evidence level: Source-confirmed gap) Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td () Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td (Location: server/src/index.js:27; server/src/index.js:111; next.config.mts:9) Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td () Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (Impact / trigger: There is no deploy directory despite references to it. Without explicit) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (production environment and routing, the API enables development behavior, the browser calls) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (localhost:4000, and the API binds all interfaces. Port conflicts silently move even in) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (production.) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td () Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (Evidence: No nginx/process-manager/deployment files exist in this checkout. NODE_ENV controls) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (production secret checks, secure cookies, demo routes and localhost CORS. API_URL defaults to) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (localhost; listen\(\) has no host restriction and retries another port.) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td () Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (Recommended fix: Create reviewed nginx/TLS and process-manager configs; bind API to loopback or) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (firewall it, pin ports and fail fast in production. Explicitly set NODE_ENV, strong secrets,) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (CLIENT_ORIGIN, API URL and persistent data paths. Build frontend with production URLs.) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td () Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td (Acceptance check: Test from an external machine: only intended HTTPS ports are open, cookies are) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td (secure, API routing works, restarts retain data, and a port conflict fails visibly.) Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td () Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td () Tj ET
+BT /F2 13 Tf 44 525.8000000000011 Td (A25 | Medium | Some Express 4 async authentication handlers do not forward) Tj ET
+BT /F2 13 Tf 44 514.5000000000011 Td (rejected promises) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td () Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (Location: server/src/middleware/auth.js:77; server/src/routes/auth.js:173) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td () Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td (Impact / trigger: A database or account-file failure during these handlers can become an) Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (unhandled rejection instead of reaching the JSON error handler. On Node's default handling this) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (can terminate the API process.) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td () Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (Evidence: The server uses Express 4. requireAdmin and GET /session are bare async functions) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (without try/catch or a promise wrapper, unlike most other routes. A real) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (database-outage/process-crash test was not run.) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td () Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td (Recommended fix: Wrap every async route/middleware in a rejection-forwarding helper or) Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (consistently catch and next\(err\). Test failures at all authentication lookup points.) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td () Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td (Acceptance check: Force account lookup to reject and assert a sanitized 5xx response, no hung) Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td (request, and continued API health.) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td () Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td () Tj ET
+BT /F2 13 Tf 44 277.2000000000009 Td (A26 | Medium | Server lockfile includes a qs version flagged by npm audit) Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td () Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td (Evidence level: Registry advisory) Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td () Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td (Location: server/package-lock.json:882) Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td () Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (Impact / trigger: The installed server dependency tree has one moderate advisory. This is not) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (proof that the vulnerable qs.stringify comma option is reachable in this application.) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td () Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (Evidence: npm audit --prefix server --json reported GHSA-6pq8-jhm2-2vcw \(qs.stringify) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (comma-format TypeError DoS\), affected range 6.7.0 through 6.16.0, fix available. Frontend audit) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td (reported zero known advisories at audit time.) Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td () Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (Recommended fix: Update the affected transitive dependency through a compatible parent/lockfile) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (update, review changes, rerun audit and application checks. Avoid blind forced major upgrades.) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td () Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (Acceptance check: Server audit has no remaining advisory and query parsing/API regressions still) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (pass. Source: https://github.com/advisories/GHSA-6pq8-jhm2-2vcw) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 10 / 13) Tj ET
+endstream
+endobj
+24 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 23 0 R >>
+endobj
+25 0 obj
+<< /Length 5712 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td () Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F2 13 Tf 44 774.4000000000001 Td (A27 | Medium | Private booking attachments are missing from git ignore rules) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (Evidence level: Source-confirmed gap) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td () Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (Location: server/src/routes/reservations.js:635; .gitignore:45) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td () Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (Impact / trigger: New guest PDF/Word attachments under the default data directory can be) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td (accidentally added to source control, unlike users, leads and reservations which are ignored.) Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td () Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (Evidence: Attachments are written to DATA_DIR/attachments/<project>; .gitignore has no) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td (server/src/data/attachments/ rule. No attachment contents or credentials were copied into this) Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (report.) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td () Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (Recommended fix: Ignore the default attachments directory and prefer runtime DATA_DIR outside the) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (source checkout. Inspect staged changes for private data before commits.) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td () Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td (Acceptance check: git check-ignore confirms a sample default-path attachment is ignored; no guest) Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td (files are tracked.) Tj ET
+BT /F1 10 Tf 44 571.0000000000009 Td () Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td () Tj ET
+BT /F2 13 Tf 44 548.400000000001 Td (A28 | Medium | Tour defaults assume Nepal even when the venue uses another) Tj ET
+BT /F2 13 Tf 44 537.100000000001 Td (timezone) Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td () Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td (Evidence level: Source-confirmed gap) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (Location: src/features/booking/booking.ts:29; src/features/booking/HotspotBookCard.tsx:59;) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td (server/src/routes/reservations.js:427) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td () Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (Impact / trigger: The old visitor-local-clock issue is fixed for Nepal venues, but the hotspot) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td (form calls venueDay without the project's configured timezone. A venue elsewhere can still) Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (receive dates inconsistent with server rules.) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td () Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (Evidence: Source inspection: form defaults and min dates use venueDay\(\) with the Nepal default;) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td (backend uses the published booking.timezone. Not reproduced in a browser.) Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td () Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (Recommended fix: Expose the venue clock/timezone to the hotspot form and pass it to every date) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (default/min helper; prefer server-returned today for public booking rules.) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td () Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (Acceptance check: Check venues in Kathmandu, Honolulu and Auckland around midnight with visitors) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (in different timezones.) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td () Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td () Tj ET
+BT /F2 13 Tf 44 299.8000000000009 Td (A29 | Medium | Tour first render waits for every published scene in the) Tj ET
+BT /F2 13 Tf 44 288.5000000000009 Td (project) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td () Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (Evidence level: Source-confirmed risk) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td () Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td (Location: src/app/tour/TourClient.tsx:76; src/lib/api.ts:21) Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td () Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (Impact / trigger: A large project requires all scene documents before mounting 3D. The shared API) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (client has no timeout, so a stalled related scene request can keep the visitor on Opening the) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td (tour indefinitely.) Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td () Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (Evidence: TourClient fetches all matching project scenes with Promise.all before setGate ready.) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (This is a scaling/reliability risk, not a measured first-frame regression.) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td () Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td (Recommended fix: Load the requested starting scene first, hydrate the rest lazily, and add) Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (bounded timeouts/cancellation and useful retry states. Preserve access checks.) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td () Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td (Acceptance check: With one sibling scene delayed or failed, the requested healthy scene still) Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (opens within the first-frame target on a real mobile device.) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td () Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 11 / 13) Tj ET
+endstream
+endobj
+26 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 25 0 R >>
+endobj
+27 0 obj
+<< /Length 6649 >>
+stream
+0.12 0.18 0.25 rg
+BT /F2 13 Tf 44 797 Td (A30 | Low | Public marketing content still contains editorial placeholders) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td (Evidence level: Source-confirmed gap) Tj ET
+BT /F1 10 Tf 44 763.1000000000001 Td () Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td (Location: src/features/marketing/pages/GameWorldsPage.tsx:50;) Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td (src/features/marketing/pages/PrivacyPage.tsx:48) Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td () Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (Impact / trigger: Visitors can encounter unfinished copy and unresolved service/policy facts.) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (This lowers trust and means the public policy text may not describe the final deployment.) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td () Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (Evidence: Source includes visible TBI/TBC markers for formats, licensing, address and providers.) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (Draft policy handling is intentional, but the final content still needs owner review.) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td () Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (Recommended fix: Replace placeholders with verified business facts and deployment-specific policy) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (text; hide unfinished sections until approved. Do not invent business or policy claims.) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td () Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td (Acceptance check: Crawl rendered public pages for TBI/TBC, broken contact actions and draft) Tj ET
+BT /F1 10 Tf 44 604.9000000000008 Td (content before launch.) Tj ET
+BT /F1 10 Tf 44 593.6000000000008 Td () Tj ET
+BT /F1 10 Tf 44 582.3000000000009 Td () Tj ET
+BT /F2 13 Tf 44 571.0000000000009 Td (VPS launch acceptance checklist) Tj ET
+BT /F1 10 Tf 44 559.700000000001 Td () Tj ET
+BT /F1 10 Tf 44 548.400000000001 Td (1. Resolve the high findings, rerun the reproduction checks as regression tests expecting the) Tj ET
+BT /F1 10 Tf 44 537.100000000001 Td (corrected behavior, then run types, lint, existing tests and a production build. The audit) Tj ET
+BT /F1 10 Tf 44 525.8000000000011 Td (reproductions currently assert the presence of bugs; their current success must not be mistaken) Tj ET
+BT /F1 10 Tf 44 514.5000000000011 Td (for a passing post-fix suite.) Tj ET
+BT /F1 10 Tf 44 503.2000000000011 Td () Tj ET
+BT /F1 10 Tf 44 491.9000000000011 Td (2. Pin a supported Node runtime and reproducible npm ci installs for both projects. Install) Tj ET
+BT /F1 10 Tf 44 480.6000000000011 Td (frontend build dependencies before compiling. Set NODE_ENV=production explicitly for the API;) Tj ET
+BT /F1 10 Tf 44 469.3000000000011 Td (generate new strong SESSION_SECRET, EMBED_TOKEN_SECRET and team/bootstrap credentials. Do not) Tj ET
+BT /F1 10 Tf 44 458.0000000000011 Td (reuse local values.) Tj ET
+BT /F1 10 Tf 44 446.70000000000107 Td () Tj ET
+BT /F1 10 Tf 44 435.40000000000106 Td (3. Build with HTTPS NEXT_PUBLIC_API_URL and NEXT_PUBLIC_SITE_URL, matching CLIENT_ORIGIN. The) Tj ET
+BT /F1 10 Tf 44 424.10000000000105 Td (frontend environment values are compiled into browser output: restart alone does not change them.) Tj ET
+BT /F1 10 Tf 44 412.80000000000103 Td (Validate same-site cookie behavior and next/image against the production API host.) Tj ET
+BT /F1 10 Tf 44 401.500000000001 Td () Tj ET
+BT /F1 10 Tf 44 390.200000000001 Td (4. Put nginx/TLS in front of Next and one API process, restrict direct API exposure, set) Tj ET
+BT /F1 10 Tf 44 378.900000000001 Td (body-size/timeouts appropriate for chunk/attachment uploads, preserve correct forwarded client IP) Tj ET
+BT /F1 10 Tf 44 367.600000000001 Td (handling, and test byte ranges. Verify port conflicts cannot silently shift the service.) Tj ET
+BT /F1 10 Tf 44 356.300000000001 Td () Tj ET
+BT /F1 10 Tf 44 345.00000000000097 Td (5. Use persistent DATA_DIR and ASSET_DIR outside release directories. Transfer ignored scans,) Tj ET
+BT /F1 10 Tf 44 333.70000000000095 Td (websites and other runtime records explicitly; a git clone does not include them. Inventory every) Tj ET
+BT /F1 10 Tf 44 322.40000000000094 Td (published scene variant and referenced tile after migration. Do not publish sample/draft projects) Tj ET
+BT /F1 10 Tf 44 311.10000000000093 Td (accidentally.) Tj ET
+BT /F1 10 Tf 44 299.8000000000009 Td () Tj ET
+BT /F1 10 Tf 44 288.5000000000009 Td (6. Exercise owner/member/staff/anonymous flows: sign-in, reset, invite, upload/resume/finalize,) Tj ET
+BT /F1 10 Tf 44 277.2000000000009 Td (edit/save/publish/unpublish/restore, website publish/schedule, enquiry,) Tj ET
+BT /F1 10 Tf 44 265.9000000000009 Td (booking/conflict/confirm/cancel, guest attachment and team download. Include two simultaneous) Tj ET
+BT /F1 10 Tf 44 254.60000000000088 Td (editors/guests.) Tj ET
+BT /F1 10 Tf 44 243.30000000000086 Td () Tj ET
+BT /F1 10 Tf 44 232.00000000000085 Td (7. Validate mail provider sender-domain DNS and real guest delivery, provider outages, and any) Tj ET
+BT /F1 10 Tf 44 220.70000000000084 Td (SMS/WhatsApp templates. Local mock tests do not establish deliverability. Test booking links and) Tj ET
+BT /F1 10 Tf 44 209.40000000000083 Td (return/analytics behavior with each real hotel engine.) Tj ET
+BT /F1 10 Tf 44 198.10000000000082 Td () Tj ET
+BT /F1 10 Tf 44 186.8000000000008 Td (8. Perform and restore off-VPS backups of database, JSON stores, attachments and scans. Monitor) Tj ET
+BT /F1 10 Tf 44 175.5000000000008 Td (disk space, uptime, API errors, failed mail, booking conflicts and backup failures. Confirm log) Tj ET
+BT /F1 10 Tf 44 164.20000000000078 Td (retention and private data access.) Tj ET
+BT /F1 10 Tf 44 152.90000000000077 Td () Tj ET
+BT /F1 10 Tf 44 141.60000000000076 Td (9. Check desktop and real Android/iOS devices over mobile networks, first frame and long-session) Tj ET
+BT /F1 10 Tf 44 130.30000000000075 Td (memory, browser history/navigation, uploads after a disconnect, form keyboard access and) Tj ET
+BT /F1 10 Tf 44 119.00000000000075 Td (reduced-motion behavior. Crawl final public URLs, canonical/sitemap links and contact actions.) Tj ET
+BT /F1 10 Tf 44 107.70000000000076 Td () Tj ET
+BT /F1 10 Tf 44 96.40000000000076 Td (10. Review the active GitHub Pages workflow and account settings if the VPS becomes the primary) Tj ET
+BT /F1 10 Tf 44 85.10000000000076 Td (site: avoid an unintended second indexed copy. Resolve placeholder content and document actual) Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 12 / 13) Tj ET
+endstream
+endobj
+28 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 27 0 R >>
+endobj
+29 0 obj
+<< /Length 1688 >>
+stream
+0.12 0.18 0.25 rg
+BT /F1 10 Tf 44 797 Td (hosting/storage choices before public launch.) Tj ET
+BT /F1 10 Tf 44 785.7 Td () Tj ET
+BT /F1 10 Tf 44 774.4000000000001 Td () Tj ET
+BT /F2 13 Tf 44 763.1000000000001 Td (Evidence bundle and safe follow-up) Tj ET
+BT /F1 10 Tf 44 751.8000000000002 Td () Tj ET
+BT /F1 10 Tf 44 740.5000000000002 Td (report.pdf: this printable audit. report.md: searchable text with the same findings.) Tj ET
+BT /F1 10 Tf 44 729.2000000000003 Td (findings.json: structured finding list. source-inventory.txt: indexed scope. reproduce.mjs and) Tj ET
+BT /F1 10 Tf 44 717.9000000000003 Td (reproductions.log: isolated confirmations. evidence/: original build, lint, tests, types and) Tj ET
+BT /F1 10 Tf 44 706.6000000000004 Td (dependency audit outputs.) Tj ET
+BT /F1 10 Tf 44 695.3000000000004 Td () Tj ET
+BT /F1 10 Tf 44 684.0000000000005 Td (Recommended follow-up is to fix findings in small reviewed batches and repeat the corresponding) Tj ET
+BT /F1 10 Tf 44 672.7000000000005 Td (acceptance checks. No source changes were made as part of this reporting request.) Tj ET
+BT /F1 10 Tf 44 661.4000000000005 Td () Tj ET
+BT /F1 10 Tf 44 650.1000000000006 Td (Keep this report and reproduction script private: they describe permission weaknesses. The script) Tj ET
+BT /F1 10 Tf 44 638.8000000000006 Td (creates only test accounts and test data and does not use server/.env. Do not point a future) Tj ET
+BT /F1 10 Tf 44 627.5000000000007 Td (adapted test harness at production data.) Tj ET
+BT /F1 10 Tf 44 616.2000000000007 Td () Tj ET
+0.45 0.45 0.45 rg BT /F1 8 Tf 44 25 Td (RCAAS | Private code audit | 29 October 2026) Tj ET
+BT /F1 8 Tf 485 25 Td (Page 13 / 13) Tj ET
+endstream
+endobj
+30 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 29 0 R >>
+endobj
+xref
+0 31
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000199 00000 n 
+0000000269 00000 n 
+0000000344 00000 n 
+0000006308 00000 n 
+0000006450 00000 n 
+0000012787 00000 n 
+0000012929 00000 n 
+0000018674 00000 n 
+0000018817 00000 n 
+0000024710 00000 n 
+0000024854 00000 n 
+0000030255 00000 n 
+0000030399 00000 n 
+0000035547 00000 n 
+0000035691 00000 n 
+0000041687 00000 n 
+0000041831 00000 n 
+0000047669 00000 n 
+0000047813 00000 n 
+0000053734 00000 n 
+0000053878 00000 n 
+0000060013 00000 n 
+0000060157 00000 n 
+0000065921 00000 n 
+0000066065 00000 n 
+0000072766 00000 n 
+0000072910 00000 n 
+0000074650 00000 n 
+trailer
+<< /Size 31 /Root 1 0 R >>
+startxref
+74794
+%%EOF

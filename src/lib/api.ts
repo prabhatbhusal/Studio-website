@@ -18,7 +18,8 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').re
  *  Name the address we actually tried so the next step is obvious. */
 async function send(path: string, options: RequestInit): Promise<Response> {
   try {
-    return await fetch(`${API_BASE}${path}`, options);
+    const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(30000)]) : AbortSignal.timeout(30000);
+    return await fetch(`${API_BASE}${path}`, { ...options, signal });
   } catch {
     throw new Error(
       `Can't reach the API at ${API_BASE}. Start it with "cd server && npm run dev", ` +
@@ -48,7 +49,7 @@ export const getScene = (id: string) => request<SceneDoc>(`/api/scenes/${id}`);
 
 /** Editor-only — requires a signed-in session (see login()). */
 export const saveScene = (id: string, doc: SceneDoc) =>
-  request(`/api/scenes/${id}`, { method: 'PUT', body: JSON.stringify(doc) });
+  request<SceneDoc>(`/api/scenes/${id}`, { method: 'PUT', body: JSON.stringify(doc) });
 
 /** Claude in the studio (server routes/studioAi.js): hotspot words in Nepali and Chinese. */
 export const translateHotspots = (sceneId: string, items: { id: string; label: string; text?: string; caption?: string }[]) =>
@@ -165,7 +166,10 @@ export interface SiteMenu { title: string; note: string; items: SiteMenuItem[] }
 /** Another place to eat or drink (2026-09-29): a café beside the restaurant, a rooftop bar. Its own menu and table booking. */
 export interface DiningPlace { id: string; name: string; menu: SiteMenu; booking: SiteBooking }
 export interface SiteDoc {
+  revision?: number;
   style: SiteStyle;
+  /** Website presentation, edited through the studio. Older sites use calm motion. */
+  presentation?: { motion: 'calm' | 'expressive' | 'none'; bookingNote: string };
   /** `image`: a full-width photo behind the opening words; empty = words only. */
   hero: { eyebrow: string; title: string; lede: string; space: string; image: string };
   facts: { n: string; k: string }[];
@@ -235,6 +239,7 @@ export interface PublicSite {
   publishedAt: string;
 }
 const sitePath = (id: string) => `/api/sites/${encodeURIComponent(id)}`;
+export const getVenueClock = (id: string, kind?: 'stay') => request<{ timezone: string; today: string }>(`${sitePath(id)}/clock${kind ? `?kind=${kind}` : ''}`);
 export const getSiteDraft = (id: string) => request<SiteDraft>(`${sitePath(id)}/draft`);
 /** The whole draft from the editor, or part of one (a starter template); the server fills in the rest. */
 export const saveSiteDraft = (id: string, draft: Partial<SiteDoc>) =>
@@ -369,7 +374,7 @@ export type ReservationStatus = 'requested' | 'confirmed' | 'declined' | 'cancel
 export interface Reservation {
   id: string; status: ReservationStatus; table: string; tableLabel: string; date: string; time: string; party: number;
   name: string; phone: string; email: string; notes: string; createdAt: string; updatedAt: string;
-  delivery?: { sent: boolean; reason?: string }; guestDelivery?: { sent: boolean; reason?: string };
+  delivery?: { sent: boolean; reason?: string }; guestDelivery?: { sent?: boolean; reason?: string; pending?: boolean; status?: string; sms?: { sent: boolean; reason?: string }; whatsapp?: { sent: boolean; reason?: string } };
   kind?: 'stay' | 'wait' | 'event' | 'request';
   /** A Book now request from a hotspot: what it was for, in which space, at what price and deposit. */
   item?: string; spaceTitle?: string; price?: string; deposit?: string;
@@ -393,8 +398,14 @@ export type MarkBooked = { space?: string; hotspot?: string; hall?: string; room
 export const markBooked = (id: string, m: MarkBooked) =>
   request<Reservation>(`${sitePath(id)}/reservations/mark`, { method: 'POST', body: JSON.stringify(m) });
 export const bookingPlanUrl = (id: string, rid: string) => `${API_BASE_URL}${sitePath(id)}/reservations/${encodeURIComponent(rid)}/attachment`;
-export const setReservationStatus = (id: string, rid: string, status: ReservationStatus) =>
-  request<Reservation & { waitlistTold?: number }>(`${sitePath(id)}/reservations/${encodeURIComponent(rid)}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+export const setReservationStatus = (id: string, rid: string, status: ReservationStatus, expectedStatus?: ReservationStatus) =>
+  request<Reservation & { waitlistTold?: number }>(`${sitePath(id)}/reservations/${encodeURIComponent(rid)}`, { method: 'PATCH', body: JSON.stringify({ status, expectedStatus }) });
+export interface ReservationReview {
+  reservation: Reservation; plan: string | null; available: boolean | null; note: string; checkedAt: string;
+  markers: { id: string; label: string; x: number; y: number; selected: boolean; available: boolean }[];
+}
+export const getReservationReview = (id: string, rid: string) =>
+  request<ReservationReview>(`${sitePath(id)}/reservations/${encodeURIComponent(rid)}/review`);
 
 /** Who did what in a project, newest first (server/src/activity.js). */
 export interface ActivityEntry { at: string; who: { id: string | null; name: string }; action: string; target: string; detail?: string }

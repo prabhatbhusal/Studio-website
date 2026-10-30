@@ -1,0 +1,19 @@
+'use client';
+import { useState } from 'react';
+import { SiteView } from '../../features/website/SiteView';
+import { BRAND_FONTS } from '../../lib/brandFonts';
+import type { BrandFont } from '../../@types/config.types';
+import type { PublicSite, SiteStyle } from '../../lib/api';
+export default function DesignHarness({ data }: { data: PublicSite }) {
+  const [font, setFont] = useState<BrandFont>('playfair');
+  const [style, setStyle] = useState<SiteStyle>('heritage');
+  const [motion, setMotion] = useState<'calm' | 'expressive' | 'none'>('calm');
+  return <>
+    <div style={{ position: 'fixed', bottom: 0, left: 0, zIndex: 100, background: 'white', color: 'black', padding: 4 }}>
+      <select aria-label="Fixture font" value={font} onChange={e => setFont(e.target.value as BrandFont)}>{Object.entries(BRAND_FONTS).map(([key, value]) => <option key={key} value={key}>{value[0]}</option>)}</select>
+      <select aria-label="Fixture design" value={style} onChange={e => setStyle(e.target.value as SiteStyle)}>{['heritage', 'classic', 'modern', 'minimal', 'night'].map(key => <option key={key}>{key}</option>)}</select>
+      <select aria-label="Fixture motion" value={motion} onChange={e => setMotion(e.target.value as typeof motion)}>{['calm', 'expressive', 'none'].map(key => <option key={key}>{key}</option>)}</select>
+    </div>
+    <SiteView data={{ ...data, project: { ...data.project, theme: { ...data.project.theme, font } }, site: { ...data.site, style, presentation: { motion, bookingNote: 'Fixture: the team replies during opening hours.' } } }} />
+  </>;
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getHereHall, getHereRoom, getHereTables, requestHere, safeUrl, sendBookingPlan, PLAN_FILES, type Availability, type EventSession } from '../../lib/api';
+import { getHereHall, getHereRoom, getHereTables, getVenueClock, requestHere, safeUrl, sendBookingPlan, PLAN_FILES, type Availability, type EventSession } from '../../lib/api';
 import { bookingHref, nightsBetween, venueDay } from './booking';
 import { countIntent } from '../../lib/stats';
 import { useT } from '../../lib/i18n';
@@ -64,6 +64,18 @@ export function HotspotBookCard({ project, space, hs, tables = [], preview = fal
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [timezone, setTimezone] = useState<string | null>(null);
+  const venueDate = (days = 0) => venueDay(days, timezone ?? 'Asia/Kathmandu');
+  useEffect(() => {
+    let live = true;
+    setTimezone(null);
+    getVenueClock(project).then((clock) => {
+      if (!live || !clock) return;
+      setTimezone(clock.timezone);
+      setAsk((a) => ({ ...a, date: kind === 'table' ? a.date : venueDay(kind === 'hall' ? 1 : 0, clock.timezone), checkout: venueDay(1, clock.timezone) }));
+    }).catch(() => { if (live) setError('Could not load this venue’s dates. Close and reopen the booking form to retry.'); });
+    return () => { live = false; };
+  }, [project, kind]);
   const set = (patch: Partial<typeof ask>) => { setAsk((a) => ({ ...a, ...patch })); setError(''); };
 
   // the path to a booking (monthly report): this card opened, in this space
@@ -113,7 +125,7 @@ export function HotspotBookCard({ project, space, hs, tables = [], preview = fal
   const table = kind === 'table' ? tables.find((x) => x.id === ask.table) ?? hs : hs;
   // The times come from the hours; if they can't load, a time is typed instead (the server still checks it).
   const timed = booksTables && !!avail;
-  const loading = booksTables && !avail && !noTimes;
+  const loading = !timezone || booksTables && !avail && !noTimes;
   const slots = avail?.slots ?? [];
   const freeAt = (at: string) => slots.find((s) => s.time === at)?.free ?? [];
   // Taken, for a table the server knows. A draft's (the studio, before publishing) has only the hours.
@@ -151,7 +163,7 @@ export function HotspotBookCard({ project, space, hs, tables = [], preview = fal
     if (own) {
       // their own booking page, with the dates filled in (the report counts the hand-off)
       countIntent(space, 'handoff');
-      window.open(bookingHref(own, { checkin: ask.date || venueDay(0), checkout: kind === 'room' ? ask.checkout : ask.date || venueDay(0), guests: ask.guests }), '_blank', 'noopener');
+      window.open(bookingHref(own, { checkin: ask.date || venueDate(0), checkout: kind === 'room' ? ask.checkout : ask.date || venueDate(0), guests: ask.guests }), '_blank', 'noopener');
       return;
     }
     if (!form.name.trim() || !form.phone.trim()) return setError(t('Add your name and phone, so we can confirm.'));
@@ -222,10 +234,10 @@ export function HotspotBookCard({ project, space, hs, tables = [], preview = fal
                 <span className="vw-sheet-field-txt">
                   <span>{kind === 'room' ? t('Check in') : t('Day')}</span>
                   {booksTables ? (
-                    <input type="date" value={day} min={avail?.dates[0]?.date ?? venueDay(0)} max={avail?.dates.at(-1)?.date}
+                    <input type="date" value={day} min={avail?.dates[0]?.date ?? venueDate(0)} max={avail?.dates.at(-1)?.date}
                       onChange={(e) => e.target.value && set({ date: e.target.value })} />
                   ) : (
-                    <input type="date" value={ask.date || venueDay(0)} min={venueDay(kind === 'hall' ? 1 : 0)}
+                    <input type="date" value={ask.date || venueDate(0)} min={venueDate(kind === 'hall' ? 1 : 0)}
                       onChange={(e) => set({ date: e.target.value, ...(kind === 'room' && e.target.value >= ask.checkout ? { checkout: e.target.value } : {}) })} />
                   )}
                 </span>

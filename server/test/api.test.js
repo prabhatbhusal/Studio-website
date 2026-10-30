@@ -122,6 +122,12 @@ after(() => {
 });
 
 const api = async (method, url, body, headers = {}) => {
+  // Match a client that reads the current revision before editing. Explicit
+  // revisions are preserved so conflict tests can intentionally send stale ones.
+  if (method === 'PUT' && body && !(body instanceof Uint8Array) && !('revision' in body) && (/^\/api\/scenes\/[^/]+$/.test(url) || /^\/api\/sites\/[^/]+\/draft$/.test(url))) {
+    const current = await fetch(BASE + url, { headers: { cookie } });
+    if (current.ok) { const doc = await current.json(); body = { ...body, revision: (doc.draft ?? doc).revision ?? 0 }; }
+  }
   const raw = body instanceof Uint8Array;
   const res = await fetch(BASE + url, {
     method,
@@ -357,6 +363,7 @@ test('a client\'s staff answer enquiries and bookings and read the report, and r
   cookie = owner.cookie;
   const pid = (await api('POST', '/api/properties', { title: 'Himal Staff Cafe' })).json.id;
   await api('PUT', '/api/scenes/himal-hall', sceneDoc('himal-hall', { propertyId: pid }));
+  await api('POST', '/api/scenes/himal-hall/publish');
   const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 3)]);
   const plan = (await api('POST', `/api/sites/${pid}/images`, new Uint8Array(png), { 'Content-Type': 'application/octet-stream' })).json.path;
   await api('PUT', `/api/sites/${pid}/draft`, {
@@ -593,6 +600,7 @@ test('an enquiry is filed to its project, emailed to its people, and exports to 
   cookie = owner.cookie;
   const pid = (await api('POST', '/api/properties', { title: 'Enquiry Hotel' })).json.id;
   await api('PUT', '/api/scenes/enquiry-suite', sceneDoc('enquiry-suite', { propertyId: pid, title: 'Deluxe suite' }));
+  await api('POST', '/api/scenes/enquiry-suite/publish');
   assert.equal((await api('PUT', `/api/properties/${pid}/lead-emails`, { emails: ['not an email'] })).status, 400);
   assert.deepEqual((await api('PUT', `/api/properties/${pid}/lead-emails`, { emails: [' Sales@Hotel.com ', 'sales@hotel.com'] })).json.emails, ['sales@hotel.com']);
 
@@ -609,18 +617,18 @@ test('an enquiry is filed to its project, emailed to its people, and exports to 
   // from the project's page
   assert.equal((await send({ sceneId: 'hub', sceneName: 'Enquiry Hotel (project page)', propertyId: pid })).status, 200);
   // a made-up project from the page files nowhere
-  assert.equal((await send({ sceneId: 'hub', propertyId: 'no-such-project' })).status, 200);
+  assert.equal((await send({ sceneId: 'hub', propertyId: 'no-such-project' })).status, 404);
   // a phone or email nobody could reach is refused, in words the form shows
   for (const bad of [{ phone: 'call me' }, { phone: '98-abc-1234567' }, { phone: '12' }, { email: 'asha@mail' }]) {
     const r = await send({ sceneId: 'enquiry-suite', ...bad });
     assert.equal(r.status, 400, JSON.stringify(bad));
     assert.match((await r.json()).error, /doesn’t look right/);
   }
-  assert.equal((await send({ sceneId: 'hub', propertyId: 'no-such-project', phone: '+44 (20) 7946-0958' })).status, 200, 'a foreign number as people write it');
+  assert.equal((await send({ sceneId: 'hub', propertyId: pid, phone: '+44 (20) 7946-0958' })).status, 200, 'a foreign number as people write it');
 
   // emails go out after the reply; give them a moment
-  for (let i = 0; i < 50 && mailbox.length < 2; i++) await new Promise((r) => setTimeout(r, 50));
-  assert.equal(mailbox.length, 2, 'the made-up project has no one to email');
+  for (let i = 0; i < 50 && mailbox.length < 3; i++) await new Promise((r) => setTimeout(r, 50));
+  assert.equal(mailbox.length, 3, 'the made-up project has no one to email');
   const mail = mailbox.find((m) => m.subject.includes('Deluxe suite'));
   assert.equal(mail.auth, 'Bearer test-mail-key');
   assert.deepEqual(mail.to, ['sales@hotel.com']);
@@ -631,7 +639,7 @@ test('an enquiry is filed to its project, emailed to its people, and exports to 
   assert.ok(!('html' in mail), 'plain text only: the fields are a stranger\'s');
 
   const list = await api('GET', `/api/properties/${pid}/leads`);
-  assert.equal(list.json.leads.length, 2);
+  assert.equal(list.json.leads.length, 3);
   assert.ok(list.json.leads.every((l) => l.delivery?.sent === true), 'the send is recorded');
 
   const csv = await fetch(`${BASE}/api/properties/${pid}/leads.csv`, { headers: { cookie } });

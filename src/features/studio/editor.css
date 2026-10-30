@@ -19,8 +19,8 @@
   font: 400 12px/1.45 var(--sans, 'Segoe UI', system-ui, sans-serif);
   color: var(--ed-text);
 
-  /* JetBrains Mono, the one typeface (--font-ui, app/layout.tsx). */
-  --sans: var(--font-ui), ui-monospace, monospace;
+  /* Studio layout supplies Inter as --font-ui for editor chrome. */
+  --sans: var(--font-ui), Arial, sans-serif;
 
   /* Black and white, so nothing in the chrome competes with the colours in
    * the scan. Dark is the default; [data-theme="light"] below swaps the same
@@ -502,6 +502,9 @@
   background: var(--ed-panel); border: 1px solid #2E6B4B; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 .ed2-save-toast.is-err { border-color: var(--ed-danger); color: var(--ed-danger); }
+.ed2-recovery { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--ed-line-lit); background: var(--ed-raise); }
+.ed2-recovery span { flex-basis: 100%; overflow-wrap: anywhere; }
+.ed2-recovery button { min-height: 32px; }
 .ed2-viewactions { margin-top: 14px; }
 
 /* inputs */

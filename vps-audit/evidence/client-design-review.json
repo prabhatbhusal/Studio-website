@@ -1,0 +1,241 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "style": "heritage",
+      "scrollHeight": 17378,
+      "overflow": false,
+      "heading": {
+        "text": "A loft of light above old Patan",
+        "font": "Poppins, \"Poppins Fallback\", system-ui, \"Segoe UI\", Roboto, sans-serif",
+        "size": "83.52px"
+      },
+      "bodyFont": "system-ui, \"Segoe UI\", Roboto, sans-serif",
+      "chapters": [
+        {
+          "id": "tour",
+          "title": "3D tour",
+          "top": 1769,
+          "height": 1382,
+          "width": 1425
+        },
+        {
+          "id": "story",
+          "title": "Our story",
+          "top": 3283,
+          "height": 798,
+          "width": 1240
+        },
+        {
+          "id": "spaces",
+          "title": "The spaces",
+          "top": 6201,
+          "height": 817,
+          "width": 1240
+        },
+        {
+          "id": "plan",
+          "title": "Floor plan",
+          "top": 7150,
+          "height": 345,
+          "width": 1240
+        },
+        {
+          "id": "",
+          "title": "Book",
+          "top": 7628,
+          "height": 1205,
+          "width": 1425
+        },
+        {
+          "id": "stay",
+          "title": "Stay",
+          "top": 8260,
+          "height": 476,
+          "width": 1240
+        },
+        {
+          "id": "menu",
+          "title": "The Loft Café",
+          "top": 0,
+          "height": 0,
+          "width": 0
+        },
+        {
+          "id": "menu-rooftop",
+          "title": "The rooftop",
+          "top": 0,
+          "height": 0,
+          "width": 0
+        },
+        {
+          "id": "events",
+          "title": "Events",
+          "top": 0,
+          "height": 0,
+          "width": 0
+        },
+        {
+          "id": "offers",
+          "title": "Offers",
+          "top": 8964,
+          "height": 1798,
+          "width": 1240
+        },
+        {
+          "id": "reviews",
+          "title": "Guests say",
+          "top": 10895,
+          "height": 1350,
+          "width": 1240
+        },
+        {
+          "id": "faq",
+          "title": "Good to know",
+          "top": 12376,
+          "height": 680,
+          "width": 1240
+        },
+        {
+          "id": "gallery",
+          "title": "Photos",
+          "top": 13189,
+          "height": 1684,
+          "width": 1240
+        },
+        {
+          "id": "contact",
+          "title": "Contact",
+          "top": 15953,
+          "height": 983,
+          "width": 1425
+        }
+      ],
+      "brokenImages": [],
+      "tourFrames": 1,
+      "bookingClearance": {
+        "tabsTop": 96.46875,
+        "headerBottom": 66
+      }
+    },
+    {
+      "width": 390,
+      "style": "heritage",
+      "scrollHeight": 15819,
+      "overflow": false,
+      "heading": {
+        "text": "A loft of light above old Patan",
+        "font": "Poppins, \"Poppins Fallback\", system-ui, \"Segoe UI\", Roboto, sans-serif",
+        "size": "30px"
+      },
+      "bodyFont": "system-ui, \"Segoe UI\", Roboto, sans-serif",
+      "chapters": [
+        {
+          "id": "tour",
+          "title": "3D tour",
+          "top": 1567,
+          "height": 972,
+          "width": 375
+        },
+        {
+          "id": "story",
+          "title": "Our story",
+          "top": 2603,
+          "height": 695,
+          "width": 335
+        },
+        {
+          "id": "spaces",
+          "title": "The spaces",
+          "top": 4433,
+          "height": 1709,
+          "width": 335
+        },
+        {
+          "id": "plan",
+          "title": "Floor plan",
+          "top": 6206,
+          "height": 173,
+          "width": 335
+        },
+        {
+          "id": "",
+          "title": "Book",
+          "top": 6442,
+          "height": 1952,
+          "width": 375
+        },
+        {
+          "id": "stay",
+          "title": "Stay",
+          "top": 6912,
+          "height": 1434,
+          "width": 335
+        },
+        {
+          "id": "menu",
+          "title": "The Loft Café",
+          "top": 0,
+          "height": 0,
+          "width": 0
+        },
+        {
+          "id": "menu-rooftop",
+          "title": "The rooftop",
+          "top": 0,
+          "height": 0,
+          "width": 0
+        },
+        {
+          "id": "events",
+          "title": "Events",
+          "top": 0,
+          "height": 0,
+          "width": 0
+        },
+        {
+          "id": "offers",
+          "title": "Offers",
+          "top": 8458,
+          "height": 1704,
+          "width": 335
+        },
+        {
+          "id": "reviews",
+          "title": "Guests say",
+          "top": 10226,
+          "height": 1048,
+          "width": 335
+        },
+        {
+          "id": "faq",
+          "title": "Good to know",
+          "top": 11338,
+          "height": 680,
+          "width": 335
+        },
+        {
+          "id": "gallery",
+          "title": "Photos",
+          "top": 12081,
+          "height": 958,
+          "width": 335
+        },
+        {
+          "id": "contact",
+          "title": "Contact",
+          "top": 14119,
+          "height": 1383,
+          "width": 375
+        }
+      ],
+      "brokenImages": [],
+      "tourFrames": 1,
+      "bookingClearance": {
+        "tabsTop": 87.796875,
+        "headerBottom": 56
+      }
+    }
+  ],
+  "errors": []
+}

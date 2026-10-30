@@ -6,7 +6,7 @@
  *  the right. The chapter in view is marked in the card. Styles: website.css .wsn. */
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
 import { Icon } from '../../components/ui/Icon';
 
 type Reach = { call?: string; whatsapp?: string };
@@ -19,7 +19,7 @@ const line: Variants = {
   open: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.55, ease: EASE } }
 };
 
-export function SiteNav({ name, logo, base = '', chapters, cta, reach }: {
+export function SiteNav({ name, logo, base = '', chapters, cta, reach, motionMode = 'calm' }: {
   name: string; logo: string | null;
   /** On a space page, the hub's address: the brand and the menu card's chapters link back to it. */
   base?: string;
@@ -27,6 +27,7 @@ export function SiteNav({ name, logo, base = '', chapters, cta, reach }: {
   chapters: [string, string][];
   cta: [string, string];
   reach: Reach;
+  motionMode?: 'calm' | 'expressive' | 'none';
 }) {
   const navRef = useRef<HTMLElement>(null);
   const [here, setHere] = useState('');
@@ -75,13 +76,21 @@ export function SiteNav({ name, logo, base = '', chapters, cta, reach }: {
     if (!menu) return;
     const ws = navRef.current?.closest<HTMLElement>('.ws');
     ws?.setAttribute('data-sheet', '');
+    const focus = requestAnimationFrame(() => ws?.querySelector<HTMLAnchorElement>('#wsn-menu a')?.focus());
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab') {
+        const nodes = [...(ws?.querySelectorAll<HTMLElement>('.wsn-menu-btn, #wsn-menu a, #wsn-menu button') ?? [])];
+        const first = nodes[0], last = nodes[nodes.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+        return;
+      }
       if (e.key !== 'Escape') return;
       setMenu(false);
       navRef.current?.querySelector<HTMLButtonElement>('.wsn-menu-btn')?.focus();
     };
     document.addEventListener('keydown', onKey);
-    return () => { ws?.removeAttribute('data-sheet'); document.removeEventListener('keydown', onKey); };
+    return () => { cancelAnimationFrame(focus); ws?.removeAttribute('data-sheet'); document.removeEventListener('keydown', onKey); };
   }, [menu]);
 
   const icons = (
@@ -116,7 +125,7 @@ export function SiteNav({ name, logo, base = '', chapters, cta, reach }: {
           <span className="ws-menu-ic" aria-hidden><i /><i /></span>
           <span className="wsn-menu-word">{menu ? 'Close' : 'Menu'}</span>
         </button>
-        <a className="wsn-brand" href={base || '#top'} onClick={() => setMenu(false)}>
+        <a className="wsn-brand" href={base || '#top'} aria-label={`${name} home`} onClick={() => setMenu(false)}>
           {logo && <Image src={logo} alt="" width={200} height={72} sizes="120px" className="wsn-logo" />}
           <span className="wsn-word">{name}</span>
         </a>
@@ -128,39 +137,44 @@ export function SiteNav({ name, logo, base = '', chapters, cta, reach }: {
       </header>
 
       <AnimatePresence>
-        {menu && <MenuCard name={name} base={base} chapters={chapters} here={here} cta={cta} icons={<>{icons}{modeBtn}</>} onClose={() => setMenu(false)} />}
+        {menu && <MenuCard name={name} base={base} chapters={chapters} here={here} cta={cta} icons={<>{icons}{modeBtn}</>} onClose={() => setMenu(false)} motionMode={motionMode} />}
       </AnimatePresence>
     </>
   );
 }
 
 /** The Menu pill grown into one card: every chapter in large type, the main button and the icons at its foot. */
-function MenuCard({ name, base, chapters, here, cta, icons, onClose }: {
+function MenuCard({ name, base, chapters, here, cta, icons, onClose, motionMode }: {
   name: string; base: string; chapters: [string, string][]; here: string; cta: [string, string]; icons: React.ReactNode; onClose: () => void;
+  motionMode: 'calm' | 'expressive' | 'none';
 }) {
+  const reduced = useReducedMotion();
+  const quiet = reduced || motionMode !== 'expressive';
+  const duration = reduced || motionMode === 'none' ? 0 : 0.18;
+  const item: Variants = quiet ? { shut: { opacity: 0 }, open: { opacity: 1, transition: { duration } } } : line;
   // the card fills the screen less a margin; it opens out of the Menu pill at its top left (mounted only after a tap)
   const shut = `inset(0px ${Math.max(0, window.innerWidth - 24 - 150)}px ${Math.max(0, window.innerHeight - 20 - BAR)}px 0px round 28px)`;
   const full = 'inset(0px 0px 0px 0px round 28px)';
   return (
     <>
       <motion.div className="wsn-scrim" aria-hidden onClick={onClose}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, transition: { duration: 0.25 } }} />
+        initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { duration } }} exit={{ opacity: 0, transition: { duration } }} />
       <motion.div id="wsn-menu" className="wsn-card" role="dialog" aria-modal="true" aria-label={`${name}: sections`}
-        initial={{ clipPath: shut }}
-        animate={{ clipPath: full, transition: { duration: 0.6, ease: EASE } }}
-        exit={{ clipPath: shut, transition: { duration: 0.38, ease: EASE } }}>
+        initial={{ clipPath: quiet ? full : shut }}
+        animate={{ clipPath: full, transition: { duration: quiet ? duration : 0.6, ease: EASE } }}
+        exit={{ clipPath: quiet ? full : shut, opacity: 0, transition: { duration: quiet ? duration : 0.38, ease: EASE } }}>
         <span className="wsn-scan" aria-hidden />
-        <motion.nav className="wsn-body" aria-label="Sections" variants={list} initial="shut" animate="open">
+        <motion.nav className="wsn-body" aria-label="Sections" variants={quiet ? { open: {}, shut: {} } : list} initial="shut" animate="open">
           <ol className="wsn-chapters">
             {chapters.map(([id, label]) => (
-              <motion.li key={id} variants={line} className={id === here ? 'is-here' : undefined}>
+              <motion.li key={id} variants={item} className={id === here ? 'is-here' : undefined}>
                 <a href={`${base}#${id}`} onClick={onClose} aria-current={id === here ? 'location' : undefined}>
                   <span className="wsn-t">{label}</span>
                 </a>
               </motion.li>
             ))}
           </ol>
-          <motion.div className="wsn-foot" variants={line}>
+          <motion.div className="wsn-foot" variants={item}>
             <a className="ws-btn wsn-card-cta" href={cta[0]} onClick={onClose}>{cta[1]}</a>
             <div className="wsn-foot-icons">{icons}</div>
           </motion.div>

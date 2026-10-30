@@ -1,0 +1,12 @@
+{
+  "capture": true,
+  "explicitRestore": true,
+  "clearAfterSave": true,
+  "discard": true,
+  "revisionConflict": true,
+  "widths": [
+    1440,
+    390
+  ],
+  "browserErrors": []
+}

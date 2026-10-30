@@ -9,6 +9,7 @@
  * queue, marked kind: 'event'.
  */
 import { LIVE, addDays } from './reservations.js';
+import { validDate } from './calendar.js';
 
 export const SESSIONS = ['day', 'evening', 'full'];
 export const SESSION_LABEL = { day: 'Daytime', evening: 'Evening', full: 'Whole day' };
@@ -43,7 +44,7 @@ export function eventCalendar(list, cfg, today) {
 
 /** Why an event can't be asked for, in words, or null. Whether the hall is free is checked separately. */
 export function eventProblem(cfg, hall, { date, session, guests, occasion }, today) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return 'Pick the day of your event.';
+  if (!validDate(date)) return 'Pick the day of your event.';
   if (date <= today) return 'Pick a day from tomorrow on. For today, please call us.';
   if (date > addDays(today, cfg.days)) return `We take event bookings up to ${cfg.days} days ahead. Call us for later dates.`;
   if (!SESSIONS.includes(session)) return 'Daytime, evening or the whole day?';

@@ -5,18 +5,13 @@
  * which Supabase's public Data API doesn't expose, with RLS on as well.
  */
 import pg from 'pg';
-import { promises as fs, readFileSync } from 'fs';
+import { promises as fs } from 'fs';
 import path from 'path';
+import { databaseConfig } from './dbConfig.js';
 
 // DATABASE_CA_FILE: the provider's CA certificate (Supabase: Database → SSL
 // configuration → download), so the TLS connection is verified, not just encrypted.
-const ca = process.env.DATABASE_CA_FILE ? readFileSync(process.env.DATABASE_CA_FILE, 'utf8') : undefined;
-
-export const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: Number(process.env.DATABASE_POOL_MAX) || 10,
-  ...(ca && { ssl: { ca } })
-});
+export const pool = new pg.Pool(databaseConfig());
 // An idle connection the provider drops must not crash the server.
 pool.on('error', (err) => console.error('[db] idle connection error:', err.message));
 
@@ -36,22 +31,21 @@ export async function tx(fn) {
   }
 }
 
-/** Applies server/db/*.sql not yet applied, in name order, each in its own
- *  transaction. ponytail: no lock between two servers starting at once;
- *  add pg_advisory_lock when more than one API process runs. */
+/** Lock before even creating the schema, so simultaneous migration runners
+ * cannot race DDL or apply the same migration. All changes commit together. */
 export async function migrate() {
   const dir = path.join(import.meta.dirname, '..', 'db');
-  await pool.query(`create schema if not exists app;
-    create table if not exists app.schema_migrations (name text primary key, applied_at timestamptz not null default now());
-    alter table app.schema_migrations enable row level security;`);
-  const done = new Set((await pool.query('select name from app.schema_migrations')).rows.map((r) => r.name));
-  for (const name of (await fs.readdir(dir)).filter((f) => f.endsWith('.sql')).sort()) {
-    if (done.has(name)) continue;
-    const sql = await fs.readFile(path.join(dir, name), 'utf8');
-    await tx(async (c) => {
+  await tx(async (c) => {
+    await c.query('select pg_advisory_xact_lock(7240032)');
+    await c.query(`create schema if not exists app;
+      create table if not exists app.schema_migrations (name text primary key, applied_at timestamptz not null default now());
+      alter table app.schema_migrations enable row level security;`);
+    const done = new Set((await c.query('select name from app.schema_migrations')).rows.map((r) => r.name));
+    for (const name of (await fs.readdir(dir)).filter((f) => f.endsWith('.sql')).sort()) {
+      if (done.has(name)) continue;
+      const sql = await fs.readFile(path.join(dir, name), 'utf8');
       await c.query(sql);
       await c.query('insert into app.schema_migrations (name) values ($1)', [name]);
-    });
-    console.log(`[db] applied ${name}`);
-  }
+    }
+  });
 }

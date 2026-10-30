@@ -1,0 +1,26 @@
+[
+  {
+    "width": 1440,
+    "overflow": false,
+    "calendar": 848,
+    "phoneSearch": true,
+    "overnightCalendar": true,
+    "checkoutExcluded": true,
+    "selectedDay": true,
+    "dateRange": true,
+    "waitlist": true,
+    "clearFilters": true
+  },
+  {
+    "width": 390,
+    "overflow": false,
+    "calendar": 343,
+    "phoneSearch": true,
+    "overnightCalendar": true,
+    "checkoutExcluded": true,
+    "selectedDay": true,
+    "dateRange": true,
+    "waitlist": true,
+    "clearFilters": true
+  }
+]

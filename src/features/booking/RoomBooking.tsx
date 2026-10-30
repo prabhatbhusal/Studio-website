@@ -82,6 +82,23 @@ export function RoomBooking({ project, stays, tour = false, preview = false, ini
     return () => window.removeEventListener('rcaas:stay', pick);
   }, [stays.rooms]);
 
+  // The website's opening search reuses this calendar and its real availability.
+  useEffect(() => {
+    const search = (event: Event) => {
+      const d = (event as CustomEvent<{ project: string; checkin: string; checkout: string; guests: number }>).detail;
+      if (!d || d.project !== project || done) return;
+      const n = nightsBetween(d.checkin, d.checkout);
+      if (!cal || d.checkin < cal.today || d.checkin > cal.lastCheckin || !cal.dates.includes(d.checkout) ||
+        n < stays.minNights || n > stays.maxNights || !Number.isInteger(d.guests) || d.guests < 1 || d.guests > stays.maxGuests) {
+        setError('Those dates are outside the booking calendar. Choose your dates here.'); return;
+      }
+      setCheckin(d.checkin); setCheckout(d.checkout); setMonth(d.checkin.slice(0, 7));
+      setGuests(d.guests); setRoom(''); setError('');
+    };
+    window.addEventListener('rcaas:stay-search', search);
+    return () => window.removeEventListener('rcaas:stay-search', search);
+  }, [project, cal, done, stays.minNights, stays.maxNights, stays.maxGuests]);
+
   const byId = (id: string) => stays.rooms.find((r) => r.id === id);
   const at = (d: string) => cal?.dates.indexOf(d) ?? -1;
   const need = (r: StayRoom) => roomsNeeded(guests, r.sleeps);
@@ -121,7 +138,7 @@ export function RoomBooking({ project, stays, tour = false, preview = false, ini
   };
 
   /* ---- motion ---- */
-  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches || root.current?.closest<HTMLElement>('.ws')?.dataset.motion === 'none';
   const onScreen = (sel: string) => gsap.utils.toArray<Element>(sel, root.current);
   const { contextSafe } = useGSAP({ scope: root });
 
@@ -379,7 +396,7 @@ export function RoomBooking({ project, stays, tour = false, preview = false, ini
                 <article key={r.id} data-room={r.id} className={`rb-room is-${st}${on ? ' is-on' : ''}`}>
                   <button type="button" className="rb-room-pick" disabled={st !== 'free' || !!done} aria-pressed={on} onClick={() => pick(r.id)}>
                     {/* eslint-disable-next-line @next/next/no-img-element -- the hotel's photo */}
-                    {r.image ? <img src={asset(r.image)} alt="" loading="lazy" /> : <span className="rb-room-ph" aria-hidden />}
+                    {r.image ? <img src={asset(r.image)} alt={r.label} loading="lazy" /> : <span className="rb-room-ph" aria-hidden />}
                     <span className="rb-room-txt">
                       <b>{r.label}</b>
                       <span className="tb-dim">{[`Sleeps ${r.sleeps}`, r.area].filter(Boolean).join(' · ')}</span>

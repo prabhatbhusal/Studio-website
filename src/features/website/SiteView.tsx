@@ -5,7 +5,7 @@ import { API_BASE_URL, photoSize, whatsappHref, type PublicSite, type SiteBookin
 import { fontFamily, SCRIPT_FONT } from '../../lib/brandFonts';
 import { AskAbout, BookingDesk, BookThisHall, BookThisRoom, SiteEnquire, SiteGallery, SiteMap, SiteReveal, SiteTour, ViewIn3D } from './SiteParts';
 import { SiteNav } from './SiteNav';
-import { SmoothScroll } from '../marketing/layout/SmoothScroll';
+import { StaySearch } from './StaySearch';
 import { TableBooking } from '../booking/TableBooking';
 import { RoomBooking } from '../booking/RoomBooking';
 import { EventBooking } from '../booking/EventBooking';
@@ -106,6 +106,11 @@ export function SiteView({ data, preview = false, review = false }: {
   const hallIn = (space: string) => (space ? site.events?.halls.find((h) => h.space === space) : undefined);
   const { offers, reviews, faq } = site;
   const hero = site.hero.image ? pic(site.hero.image) : null;
+  // Reuse a photo authored for this same space when a room type has no own photo.
+  const staysWithPhotos = site.stays ? { ...site.stays, rooms: site.stays.rooms.map(r => ({ ...r,
+    image: r.image || (r.space ? site.rooms.find(chapter => chapter.space === r.space && chapter.image)?.image : '') || ''
+  })) } : null;
+  const bookingNote = site.presentation?.bookingNote || 'Send a reservation request. The team confirms availability and any payment arrangements.';
   const dineName = site.booking?.name || menu?.title || 'Eat and drink';
   // Highlights: what the place sells, each a picture and a jump to its chapter
   const photoOf = (...c: (string | undefined)[]) => c.find(Boolean) || '';
@@ -127,7 +132,7 @@ export function SiteView({ data, preview = false, review = false }: {
     site.stays && { id: 'stay', label: 'Stay', node: (
       <section id="stay" className="ws-chap ws-book" data-chapter="Stay">
         <Head n={0} kicker="Stay with us" title="Book a room" lead={site.stays.note || 'Choose your dates and how many of you, then pick your room.'} />
-        <RoomBooking project={project.id} stays={site.stays} tour={!!tour} preview={preview} />
+        <RoomBooking project={project.id} stays={staysWithPhotos!} tour={!!tour} preview={preview} />
       </section>
     ) },
     (menu || site.booking) && { id: 'menu', label: dineName, node: (
@@ -184,9 +189,8 @@ export function SiteView({ data, preview = false, review = false }: {
     ]
   };
   return (
-    <div className="ws" data-style={site.style ?? 'heritage'} style={style}>
+    <div className="ws" data-style={site.style ?? 'heritage'} data-motion={site.presentation?.motion ?? 'calm'} style={style}>
       {/* before the first paint: cover the page for the opening curtain (SiteReveal), first visit only */}
-      <script dangerouslySetInnerHTML={{ __html: "try{if(!sessionStorage.getItem('ws-intro')&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.wsIntro='1'}catch(e){}" }} />
       {!preview && (
         // <: nothing a client typed can close the script tag
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }} />
@@ -198,10 +202,7 @@ export function SiteView({ data, preview = false, review = false }: {
           <a href={`/studio/${encodeURIComponent(project.id)}/site`}>Back to the editor</a>
         </p>
       )}
-      {cta[1] === 'Book now' && (
-        <p className="ws-note">Book direct with {name}: your request goes straight to our team, and nothing is paid online.</p>
-      )}
-      <SiteNav name={name} logo={logo} chapters={chapters} cta={cta} reach={navReach} />
+      <SiteNav name={name} logo={logo} chapters={chapters} cta={cta} reach={navReach} motionMode={site.presentation?.motion} />
 
       {/* The opening (2026-10-07, after faithibiza.com): the headline in tall capitals with a handwritten
           line over it, and the photo in an arch below that opens to the whole screen as the page scrolls
@@ -214,8 +215,8 @@ export function SiteView({ data, preview = false, review = false }: {
           <h1>{site.hero.title || name}</h1>
           {site.hero.lede && <p className="ws-lede">{site.hero.lede}</p>}
           <div className="ws-hero-ctas">
-            {tour && <a className="ws-btn" href="#tour">Start 3D tour</a>}
-            <a className={`ws-btn${tour ? ' ws-btn-ghost' : ''}`} href={cta[0]}>{cta[1]}</a>
+            <a className="ws-btn" href={cta[0]}>{cta[1]}</a>
+            {tour && <a className="ws-btn ws-btn-ghost" href="#tour">Explore in 3D</a>}
           </div>
         </div>
         {hero && <div className="ws-arch"><Image {...hero} alt="" sizes="100vw" preload className="ws-hero-img" /></div>}
@@ -229,6 +230,7 @@ export function SiteView({ data, preview = false, review = false }: {
         ))}
       </section>
       </div>
+      {staysWithPhotos && <StaySearch project={project.id} stays={staysWithPhotos} />}
       {site.facts.length > 0 && (
         <dl className="ws-facts">
           {site.facts.map((f, i) => <div key={i}><dd>{f.n}</dd><dt>{f.k}</dt></div>)}
@@ -330,10 +332,10 @@ export function SiteView({ data, preview = false, review = false }: {
       {deskTabs.length > 1 ? (
         <section className="ws-desk" aria-label="Book" data-chapter="Book">
           <Head kicker="Book direct" title={site.stays ? 'Book your stay' : 'Book with us'}
-            lead="Send a request and the team confirms it, usually within the hour. Nothing is charged online." />
-          <BookingDesk tabs={deskTabs} />
+            lead={bookingNote} />
+          <BookingDesk tabs={deskTabs} motionMode={site.presentation?.motion} />
         </section>
-      ) : deskTabs.map((t) => <Fragment key={t.id}>{t.node}</Fragment>)}
+      ) : deskTabs.map((t) => <Fragment key={t.id}><p className="ws-booking-guidance">{bookingNote}</p>{t.node}</Fragment>)}
 
       {offers.length > 0 && (
         <section id="offers" className="ws-chap ws-offers" data-chapter="Offers">
@@ -439,8 +441,7 @@ export function SiteView({ data, preview = false, review = false }: {
           <WhatsAppIcon />
         </a>
       )}
-      <SiteReveal />
-      <SmoothScroll root=".ws" magnetic=".ws-btn, .wsn-ic, .ws-act" />
+      <SiteReveal motionMode={site.presentation?.motion} />
     </div>
   );
 }
@@ -470,8 +471,9 @@ export function siteBasics(data: PublicSite) {
   // A project that takes no enquiries (its features) has no form: its contact details instead.
   const asks = project.features?.enquiries !== false;
   // The main button: booking when the place takes it online, else the enquiry
-  const books = site.stays ? 'stay' : site.events ? 'events' : site.booking ? 'reserve' : '';
-  const cta: [string, string] = books ? [`#${books}`, 'Book now'] : ['#contact', asks ? 'Enquire' : 'Contact'];
+  const dining = site.dining?.find(d => d.booking?.on);
+  const books = site.stays ? 'stay' : site.events ? 'events' : site.booking ? 'reserve' : dining ? `reserve-${dining.id}` : '';
+  const cta: [string, string] = books ? [`#${books}`, site.stays ? 'Check availability' : site.events ? 'Request an event' : 'Reserve a table'] : ['#contact', asks ? 'Enquire' : 'Contact'];
   const navReach = {
     call: info.phone ? `tel:${info.phone.replace(/[^\d+]/g, '')}` : undefined,
     whatsapp: info.whatsapp ? whatsappHref(info.whatsapp, hello) : undefined

@@ -12,9 +12,11 @@
  * takes as many rooms of that type as it needs.
  */
 import { LIVE, addDays } from './reservations.js';
+import { validDate } from './calendar.js';
 
 /** The nights a stay uses: check-in up to, not including, check-out. */
 export function nightsOf(checkin, checkout) {
+  if (!validDate(checkin) || !validDate(checkout)) return [];
   const out = [];
   for (let d = checkin; d < checkout && out.length < 366; d = addDays(d, 1)) out.push(d);
   return out;
@@ -67,8 +69,7 @@ export function stayCalendar(list, cfg, today) {
 
 /** Why a stay can't be asked for, in words, or null. Availability is checked separately. */
 export function stayProblem(cfg, room, { checkin, checkout, guests }, today) {
-  const date = /^\d{4}-\d{2}-\d{2}$/;
-  if (!date.test(checkin) || !date.test(checkout)) return 'Pick your check-in and check-out dates.';
+  if (!validDate(checkin) || !validDate(checkout)) return 'Pick your check-in and check-out dates.';
   if (checkin < today) return 'Check-in can’t be in the past.';
   if (checkin > addDays(today, cfg.days)) return `We take bookings up to ${cfg.days} days ahead. Call us for later dates.`;
   const nights = nightsOf(checkin, checkout).length;

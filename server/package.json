@@ -12,6 +12,7 @@
     "assets:unused": "node scripts/unused-assets.js",
     "make-admin": "node scripts/make-admin.js",
     "db:import-users": "node scripts/import-users.js",
+    "test:postgres": "node scripts/verify-postgres.js",
     "seed:sample": "node scripts/seed-sample-site.mjs"
   },
   "dependencies": {

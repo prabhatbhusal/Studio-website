@@ -259,6 +259,14 @@ export default function SiteEditorPage({ params }: { params: Promise<{ property:
               </button>
             ))}
           </div>
+          <label className="se-field"><span>Website motion</span>
+            <select value={doc.presentation?.motion ?? 'calm'} onChange={(e) => change({ presentation: { bookingNote: doc.presentation?.bookingNote ?? '', motion: e.target.value as 'calm' | 'expressive' | 'none' } })}>
+              <option value="calm">Calm — brief entrances, natural scrolling</option>
+              <option value="expressive">Expressive — cinematic scrolling on larger screens</option>
+              <option value="none">None — no decorative animation</option>
+            </select>
+          </label>
+          <p className="se-hint">Applies to every design and font. Visitors who request reduced motion always get the quiet version.</p>
           {/* the project's heading font: saved at once, for the website, the tour and the /t/ page alike */}
           <div className="se-fonts" role="radiogroup" aria-label="Heading font">
             <span className="se-fonts-label">Heading font <small>(saved at once; the tour uses it too)</small></span>
@@ -274,7 +282,7 @@ export default function SiteEditorPage({ params }: { params: Promise<{ property:
 
         <Card title="Opening" hint="The first thing visitors read, above the live tour.">
           <div className="se-photo-wide">
-            <Photo project={id} value={doc.hero.image} label="Add a photo behind the title…" wide
+            <Photo project={id} value={doc.hero.image} label="Add an opening photo…" wide
               onChange={(image) => change({ hero: { ...doc.hero, image } })} onError={setError} />
           </div>
           <p className="se-hint">A wide, bright landscape photo, at least 2400 px across, with no words on it. Without one, the opening is words only.</p>
@@ -284,6 +292,10 @@ export default function SiteEditorPage({ params }: { params: Promise<{ property:
             onChange={(v) => change({ hero: { ...doc.hero, title: v } })} />
           <Text label="Introduction" value={doc.hero.lede} max={400} long
             onChange={(v) => change({ hero: { ...doc.hero, lede: v } })} />
+          <Text label="Booking guidance" value={doc.presentation?.bookingNote ?? ''} max={240} long
+            placeholder="Send a reservation request. The team confirms availability and any payment arrangements."
+            onChange={(bookingNote) => change({ presentation: { motion: doc.presentation?.motion ?? 'calm', bookingNote } })} />
+          <p className="se-hint">Shown beside booking actions. Add your actual response time or deposit policy; leave blank for neutral request guidance.</p>
           <label className="se-field">
             <span>The live tour shows</span>
             <select value={doc.hero.space} onChange={(e) => change({ hero: { ...doc.hero, space: e.target.value } })}>

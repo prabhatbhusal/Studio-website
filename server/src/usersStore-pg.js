@@ -5,7 +5,7 @@
  */
 import { randomUUID, randomBytes } from 'crypto';
 import { pool, tx } from './db.js';
-import { normEmail, hashPassword, passwordMatches, publicUser, sha, RESET_TTL } from './usersStore-file.js';
+import { normEmail, hashPassword, passwordMatches, publicUser, sha, RESET_TTL } from './accountCredentials.js';
 
 const COLS = 'id, name, email, role';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,6 +29,7 @@ export async function getUserByEmail(email) {
 /** Locks every admin row first, so two demotions at once can't both pass
  *  the last-admin check. */
 async function adminsLocked(c) {
+  await c.query('select pg_advisory_xact_lock(7240031)');
   return (await c.query(`select id from app.users where role = 'admin' for update`)).rows.length;
 }
 
@@ -48,17 +49,21 @@ export async function setUserRole(id, role) {
 }
 
 /** Null if the email is taken. The first account ever becomes admin.
- *  ponytail: two first sign-ups at the same instant both become admin;
- *  harmless (an admin can demote one). */
+ *  The transaction lock also serializes bootstrap across API processes. */
 export async function createUser({ name, email, password, role }) {
-  const r = await pool.query(
+  const passwordHash = await hashPassword(password);
+  return tx(async (c) => {
+  // Serialize the empty-table bootstrap across connections/processes.
+  await c.query('select pg_advisory_xact_lock(7240031)');
+  const r = await c.query(
     `insert into app.users (id, name, email, password_hash, role)
      select $1, $2, $3, $4, case when exists (select 1 from app.users) then $5 else 'admin' end
      on conflict (email) do nothing
      returning ${COLS}`,
-    [randomUUID(), String(name).trim(), normEmail(email), await hashPassword(password), role === 'staff' ? 'staff' : 'editor']
+    [randomUUID(), String(name).trim(), normEmail(email), passwordHash, role === 'staff' ? 'staff' : 'editor']
   );
   return one(r);
+  });
 }
 
 export async function createStaffAccount({ name, email }) {
@@ -88,12 +93,13 @@ export async function createResetToken(id) {
 
 /** One statement: a link used twice at once still sets one password. */
 export async function resetPassword(token, password) {
-  const now = new Date(); // the app's clock, as session iatMs is (staleReason)
+  const passwordHash = await hashPassword(password);
+  const now = new Date(); // Match the file adapter: invalidate sessions issued while hashing too.
   return one(await pool.query(
     `update app.users set password_hash = $2, password_changed_at = $3, reset_hash = null, reset_expires = null
      where reset_hash = $1 and reset_expires > $3
      returning ${COLS}`,
-    [sha(token), await hashPassword(password), now]
+    [sha(token), passwordHash, now]
   ));
 }
 

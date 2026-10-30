@@ -218,10 +218,9 @@ export function Uploader({ propertyId = null, onClose, onCreated }: UploaderProp
 
 /* -------------------------------------------------------------------- */
 
-/** There is no sign-*up*: one shared editor password stands in until real
- *  accounts exist (server/src/middleware/auth.js). This is the whole login
- *  surface the studio has. */
+/** The upload dialog uses the same personal account as the main sign-in. */
 function SignIn({ error, onSignedIn }: { error: string; onSignedIn: () => void }) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState('');
@@ -231,7 +230,7 @@ function SignIn({ error, onSignedIn }: { error: string; onSignedIn: () => void }
     setBusy(true);
     setFailed('');
     try {
-      await login(password);
+      await login(password, email);
       onSignedIn();
     } catch (err) {
       setFailed(err instanceof Error ? err.message : 'Sign in failed.');
@@ -243,18 +242,20 @@ function SignIn({ error, onSignedIn }: { error: string; onSignedIn: () => void }
   return (
     <form className="up-signin" onSubmit={submit}>
       <p className="up-slot-hint">
-        Uploading needs an editor session. One shared password, set as
-        <code> EDITOR_PASSWORD</code> in <code>server/.env</code>.
+        Sign in with your studio account to upload.
       </p>
       <div className="up-signin-row">
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" aria-label="Email" autoComplete="username" required />
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Editor password"
+          placeholder="Password"
+          aria-label="Password"
+          required
           autoComplete="current-password"
         />
-        <button type="submit" disabled={busy || !password}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        <button type="submit" disabled={busy || !email || !password}>{busy ? 'Signing in…' : 'Sign in'}</button>
       </div>
       {(failed || error) && <p className="up-error">{failed || error}</p>}
     </form>
