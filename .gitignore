@@ -12,6 +12,8 @@ docs/
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
 
+/qa-bug-hunt
+
 # Node
 node_modules/
 server/node_modules/
